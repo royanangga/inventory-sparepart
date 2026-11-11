@@ -1,10 +1,10 @@
 import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { getUser } from '../lib/auth';
-import { logout } from '../lib/actions';
 import { q } from '../lib/db';
 import { SITE } from '../lib/site';
 import Nav from './Nav';
+import UserMenu from './UserMenu';
 const font = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap' });
 const desc = 'Pantau stok sparepart per gudang, input mutasi bulanan, approval koreksi, dan nilai persediaan dalam satu dashboard.';
 export const metadata = {
@@ -33,8 +33,8 @@ export default async function RootLayout({ children }) {
           <aside>
             <header><b className="logo">Inventory<br />Sparepart</b></header>
             <Nav items={items} />
-            <form action={logout}><span>{u.name}</span><button className="ghost">Keluar</button></form>
           </aside>)}
+        {u && <header className="topbar"><b className="tb-logo">Inventory Sparepart</b><UserMenu name={u.name} role={u.role === 'accounting' ? 'Accounting' : 'Gudang'} /></header>}
         <main id="isi">{children}</main>
       </div>
     </body></html>

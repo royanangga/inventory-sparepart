@@ -109,3 +109,23 @@ html{-webkit-text-size-adjust:100%}
 }
 @media(min-width:1600px){main{max-width:1680px}}
 @keyframes sheet{from{transform:translateY(100%)}}
+/* ===== panel header (profil & keluar) ===== */
+.shell{grid-template-rows:auto 1fr;grid-template-areas:"nav top" "nav main"}
+aside{grid-area:nav;align-self:start}.topbar{grid-area:top}main{grid-area:main}
+.topbar{position:sticky;top:0;z-index:30;display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:10px clamp(16px,3vw,36px);background:rgba(238,241,243,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln)}
+.tb-logo{display:none;margin-right:auto;font-size:16px}
+.um{position:relative}.um-btn{display:flex;align-items:center;gap:10px;padding:5px 12px 5px 5px;background:#fff;color:var(--ink);border-radius:99px;box-shadow:inset 0 0 0 1px var(--ln)}
+.um-btn:hover:not(:disabled){background:#fff;box-shadow:inset 0 0 0 1px var(--tl),0 8px 18px -10px rgba(14,42,51,.5)}
+.av{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--tl);color:#fff;font-size:12px;font-weight:700}
+.um-t{display:grid;text-align:left;line-height:1.2}.um-t small{color:var(--mu);font-weight:500}.um-btn i{font-style:normal;color:var(--mu);transition:transform .2s}.um-btn[aria-expanded=true] i{transform:rotate(180deg)}
+.um-pop{position:absolute;right:0;top:calc(100% + 8px);min-width:220px;padding:8px;background:#fff;border:1px solid var(--ln);border-radius:14px;box-shadow:0 24px 50px -18px rgba(14,42,51,.5);animation:pop .2s cubic-bezier(.2,.9,.3,1.1) both;transform-origin:top right;z-index:40}
+.um-h{display:grid;padding:8px 10px 10px;border-bottom:1px solid #edf1f3;margin-bottom:6px}.um-h small{color:var(--mu)}
+.um-pop a,.um-pop .um-out{display:block;width:100%;text-align:left;padding:9px 10px;border-radius:9px;color:var(--ink);font-weight:600;background:transparent;box-shadow:none}
+.um-pop a:hover,.um-pop .um-out:hover:not(:disabled){background:#eef6f5;text-decoration:none;transform:none;box-shadow:none}.um-pop .um-out{color:var(--rd)}.um-pop .um-out:hover:not(:disabled){background:#fdecea}
+.pw{max-width:420px}.pw small{display:block;font-weight:400;margin-top:4px}
+@media(max-width:860px){
+  .shell{grid-template-rows:auto auto 1fr;grid-template-areas:"top" "nav" "main"}
+  aside{align-self:stretch}.topbar{position:relative;padding:8px calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left))}
+  aside .logo{display:none}.tb-logo{display:block}
+}
+@media(max-width:600px){.um-t{display:none}.um-btn{padding:4px 10px 4px 4px}.um-pop{min-width:200px}}
