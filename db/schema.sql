@@ -21,3 +21,17 @@ CREATE TABLE IF NOT EXISTS price_imports (
   id serial PRIMARY KEY, filename text, rows_read int, items_loaded int, conflicts int, imported_by text, at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS currency_rates (code text PRIMARY KEY, rate numeric);
 INSERT INTO currency_rates(code, rate) VALUES ('03', 1) ON CONFLICT DO NOTHING;
+-- Kunci bulanan per gudang: ada baris = bulan itu terkunci
+CREATE TABLE IF NOT EXISTS period_locks (
+  warehouse_id int NOT NULL REFERENCES warehouses(id), month text NOT NULL, locked_by text, locked_at timestamptz DEFAULT now(),
+  PRIMARY KEY (warehouse_id, month));
+INSERT INTO period_locks(warehouse_id, month, locked_by) SELECT id, '2026-10', 'setup' FROM warehouses ON CONFLICT DO NOTHING;
+-- Permintaan perubahan setelah bulan terkunci (menunggu approval Accounting)
+CREATE TABLE IF NOT EXISTS change_requests (
+  id serial PRIMARY KEY, warehouse_id int NOT NULL REFERENCES warehouses(id), month text NOT NULL,
+  action text NOT NULL CHECK (action IN ('ADD','EDIT','DELETE')),
+  movement_id int REFERENCES movements(id) ON DELETE SET NULL, item_id int REFERENCES items(id),
+  type text, qty numeric, date date, note text, snapshot jsonb, reason text NOT NULL,
+  status text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','APPROVED','REJECTED')),
+  requested_by text, requested_at timestamptz DEFAULT now(), decided_by text, decided_at timestamptz, decision_note text);
+CREATE INDEX IF NOT EXISTS cr_status ON change_requests(status);

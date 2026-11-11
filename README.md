@@ -11,6 +11,11 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 6. Hapus `SETUP_TOKEN` di Vercel lalu Redeploy. Login `accounting` > Price Master > upload file.
 (Alternatif lokal: `npm install && npm run setup` dengan `.env.local`.)
 
+## Alur input bulanan
+- User gudang menginput masuk/keluar di menu **Input Mutasi** selama bulan masih terbuka (boleh dihapus), lalu klik **kunci bulan**.
+- Setelah terkunci, perubahan (tambah / ubah / hapus mutasi) hanya lewat **permintaan** dengan alasan; Accounting menyetujui atau menolak di menu **Approval**. Yang disetujui langsung diterapkan.
+- Oktober 2026 (data import awal) otomatis terkunci. Tabel baru dibuat otomatis saat aplikasi pertama kali dibuka setelah update.
+
 ## Aturan penting
 - Satu baris Excel = satu baris barang (kode yang sama bisa muncul beberapa kali di gudang yang sama, mis. sisi R/L).
 - Stok awal = kolom STOCK SEP. IN/OUT Oktober masuk sebagai mutasi tertanggal 31 Okt 2026; mutasi berikutnya diinput gudang.

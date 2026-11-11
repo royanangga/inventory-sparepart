@@ -19,6 +19,7 @@ export async function GET(req) {
     await pool.query(schema);
     for (const [c, p, n] of WH) await pool.query('INSERT INTO warehouses(code,plant,name) VALUES($1,$2,$3) ON CONFLICT(code) DO NOTHING', [c, p, n]);
     const wid = Object.fromEntries((await pool.query('SELECT id,code FROM warehouses')).rows.map((r) => [r.code, r.id]));
+    await pool.query("INSERT INTO period_locks(warehouse_id,month,locked_by) SELECT id,'2026-10','setup' FROM warehouses ON CONFLICT DO NOTHING");
     out.push('USER BARU (catat password, tidak ditampilkan lagi):');
     for (const [u, n, r, w] of USERS) {
       if ((await pool.query('SELECT 1 FROM users WHERE username=$1', [u])).rowCount) continue;
