@@ -129,3 +129,8 @@ aside{grid-area:nav;align-self:start}.topbar{grid-area:top}main{grid-area:main}
   aside .logo{display:none}.tb-logo{display:block}
 }
 @media(max-width:600px){.um-t{display:none}.um-btn{padding:4px 10px 4px 4px}.um-pop{min-width:200px}}
+/* ===== laporan dashboard ===== */
+.report{margin-top:16px}.rhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.rhead h2{margin:0;font-size:17px}
+.report .rk{margin:6px 0 0}.report .rk .card{background:#f6f9fa;box-shadow:none}.report h3{margin:18px 0 8px}
+.report tfoot td{font-weight:700;background:#f6f9fa;border-top:2px solid var(--ln)}
+@media(max-width:600px){.rhead .pbtn{width:100%}}
