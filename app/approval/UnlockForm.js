@@ -1,12 +1,13 @@
 'use client';
+import ConfirmForm from '../ConfirmForm';
 import { unlockMonth } from '../../lib/actions';
-export default function UnlockForm({ wh, month }) {
+export default function UnlockForm({ wh, whName, month }) {
+  const build = (fd) => ({ title: `Buka kunci ${month}?`, intro: `Alasan: ${String(fd.get('reason') || '').trim()}`, confirmText: 'Buka kunci', tone: 'danger',
+    rows: [{ label: `${whName} · ${month}`, from: 'Terkunci', to: 'Terbuka' }, { label: 'Permintaan yang menunggu', from: 'Menunggu approval', to: 'Otomatis ditolak' }] });
   return (
-    <form action={unlockMonth} className="bar" style={{ margin: 0 }}
-      onSubmit={(e) => { if (!confirm(`Buka kunci ${month}? Permintaan perubahan yang masih menunggu untuk bulan ini akan otomatis ditolak.`)) e.preventDefault(); }}>
+    <ConfirmForm action={unlockMonth} build={build} className="bar" style={{ margin: 0 }}>
       <input type="hidden" name="wh" value={wh} /><input type="hidden" name="month" value={month} />
       <input name="reason" placeholder="Alasan buka kunci (wajib)" required minLength={3} size={30} />
       <button>Buka kunci</button>
-    </form>
-  );
+    </ConfirmForm>);
 }

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { q } from '../lib/db';
 import { requireUser } from '../lib/auth';
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Stok Gudang' };
 const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const fmt = (v) => (v == null ? '—' : nf.format(v));
 

@@ -1,28 +1,42 @@
 import './globals.css';
-import Link from 'next/link';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { getUser } from '../lib/auth';
 import { logout } from '../lib/actions';
 import { q } from '../lib/db';
-export const metadata = { title: 'Inventory Sparepart' };
+import { SITE } from '../lib/site';
+import Nav from './Nav';
+const font = Plus_Jakarta_Sans({ subsets: ['latin'], display: 'swap' });
+const desc = 'Pantau stok sparepart per gudang, input mutasi bulanan, approval koreksi, dan nilai persediaan dalam satu dashboard.';
+export const metadata = {
+  metadataBase: new URL(SITE),
+  title: { default: 'Inventory Sparepart — Stok & Mutasi Gudang', template: '%s · Inventory Sparepart' },
+  description: desc, applicationName: 'Inventory Sparepart',
+  keywords: ['inventory sparepart', 'stok gudang', 'mutasi stok', 'nilai persediaan', 'price master'],
+  openGraph: { type: 'website', locale: 'id_ID', siteName: 'Inventory Sparepart', title: 'Inventory Sparepart — Stok & Mutasi Gudang', description: desc },
+  robots: { index: true, follow: true },
+};
+export const viewport = { themeColor: '#0e2a33', width: 'device-width', initialScale: 1 };
 export default async function RootLayout({ children }) {
   const u = getUser();
   let pending = 0;
   if (u?.role === 'accounting') { try { pending = (await q("SELECT count(*)::int n FROM change_requests WHERE status='PENDING'"))[0].n; } catch {} }
+  const items = u ? [
+    { href: '/dashboard', label: 'Dashboard' }, { href: '/', label: 'Stok' },
+    ...(u.role === 'gudang' ? [{ href: '/mutasi', label: 'Input Mutasi' }] : []),
+    ...(u.role === 'accounting' ? [{ href: '/approval', label: 'Approval', badge: pending }, { href: '/price', label: 'Price Master' }] : []),
+  ] : [];
   return (
-    <html lang="id"><body>
-      {u && (
-        <header>
-          <b>Inventory Sparepart</b>
-          <nav>
-            <Link href="/">Stok</Link>
-            {u.role === 'gudang' && <Link href="/mutasi">Input Mutasi</Link>}
-            {u.role === 'accounting' && <Link href="/approval">Approval{pending > 0 ? ` (${pending})` : ''}</Link>}
-            {u.role === 'accounting' && <Link href="/price">Price Master</Link>}
-          </nav>
-          <form action={logout}><span>{u.name}</span><button>Keluar</button></form>
-        </header>
-      )}
-      <main>{children}</main>
+    <html lang="id"><body className={font.className}>
+      <a className="skip" href="#isi">Lewati ke konten</a>
+      <div className={u ? 'shell' : ''}>
+        {u && (
+          <aside>
+            <header><b className="logo">Inventory<br />Sparepart</b></header>
+            <Nav items={items} />
+            <form action={logout}><span>{u.name}</span><button className="ghost">Keluar</button></form>
+          </aside>)}
+        <main id="isi">{children}</main>
+      </div>
     </body></html>
   );
 }

@@ -2,7 +2,9 @@ import { q } from '../../lib/db';
 import { requireUser } from '../../lib/auth';
 import { saveRate } from '../../lib/actions';
 import PriceImport from './PriceImport';
+import RateForm from './RateForm';
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Price Master' };
 export default async function Price() {
   requireUser('accounting');
   const [cnt] = await q('SELECT count(*)::int n, max(start_date) latest FROM price_master');
@@ -14,16 +16,12 @@ export default async function Price() {
   return (
     <>
       <h1>Price Master</h1>
-      <PriceImport />
+      <PriceImport current={cnt.n} />
       <div className="card"><b>{cnt.n.toLocaleString('id-ID')} item</b> berharga di database{cnt.latest ? ` (Start_Date terbaru ${cnt.latest})` : ''}.
         {imports.length > 0 && <ul>{imports.map((i) => <li key={i.id}>{new Date(i.at).toLocaleString('id-ID')} — {i.filename}: {i.items_loaded} item, {i.conflicts} konflik, oleh {i.imported_by}</li>)}</ul>}</div>
       <div className="card">
         <b>Kurs ke IDR</b> <span className="muted">— Currency_Code selain 03 perlu kurs agar nilai persediaan dihitung (kosong = nilai tidak dihitung).</span>
-        {rates.map((r) => (
-          <form key={r.code} action={saveRate} className="bar" style={{ margin: '8px 0 0' }}>
-            <input type="hidden" name="code" value={r.code} /><span style={{ width: 90 }}>Kode {r.code}</span>
-            <input name="rate" type="number" step="any" defaultValue={r.rate ?? ''} placeholder="kurs" /><span className="muted">{r.n} item</span><button>Simpan</button>
-          </form>))}
+        {rates.map((r) => <RateForm key={r.code} code={r.code} rate={r.rate} n={r.n} />)}
       </div>
       <div className="card"><b>{total} baris barang belum punya harga</b> <span className="muted">(menampilkan 100 pertama; filter lengkap ada di halaman Stok)</span>
         <div className="wrap" style={{ marginTop: 8, maxHeight: 320 }}><table><thead><tr><th>Gudang</th><th>Kode</th><th>Item</th></tr></thead>

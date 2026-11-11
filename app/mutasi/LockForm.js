@@ -1,10 +1,12 @@
 'use client';
+import ConfirmForm from '../ConfirmForm';
 import { lockMonth } from '../../lib/actions';
 export default function LockForm({ month }) {
+  const build = () => ({ title: `Kunci data ${month}?`, intro: 'Setelah dikunci, perubahan harus diajukan dan disetujui Accounting.', confirmText: 'Kunci bulan',
+    rows: [{ label: `Status ${month}`, from: 'Terbuka (bisa diedit langsung)', to: 'Terkunci (perlu approval)' }] });
   return (
-    <form action={lockMonth} onSubmit={(e) => { if (!confirm(`Kunci data ${month}? Setelah dikunci, perubahan harus disetujui Accounting.`)) e.preventDefault(); }}>
+    <ConfirmForm action={lockMonth} build={build}>
       <input type="hidden" name="month" value={month} />
       <button>Selesai input &amp; kunci bulan {month}</button>
-    </form>
-  );
+    </ConfirmForm>);
 }

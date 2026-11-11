@@ -4,6 +4,7 @@ import { thisMonth, validMonth, monthRange } from '../../lib/util';
 import Grid from './Grid';
 import LockForm from './LockForm';
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Input Mutasi' };
 const ST = { PENDING: 'Menunggu', APPROVED: 'Disetujui', REJECTED: 'Ditolak' };
 const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 

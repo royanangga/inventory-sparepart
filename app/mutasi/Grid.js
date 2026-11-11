@@ -2,6 +2,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useFormState } from 'react-dom';
 import { saveGrid, requestGrid } from '../../lib/actions';
+import ConfirmForm from '../ConfirmForm';
 const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const parse = (s) => { const t = String(s ?? '').trim().replace(',', '.'); return t === '' ? 0 : Number(t); };
 
@@ -38,8 +39,16 @@ export default function Grid({ rows, month, prev, locked }) {
   }, [rows, vals]);
   const f = filter.trim().toLowerCase();
   const total = rows.reduce((a, r) => { const v = vals[r.id], i = parse(v.in), o = parse(v.out); return a + r.open + (Number.isNaN(i) ? 0 : i) - (Number.isNaN(o) ? 0 : o); }, 0);
+  const build = (fd) => {
+    if (!changed.length) return null;
+    const by = new Map(rows.map((r) => [r.id, r]));
+    const list = changed.map((c) => { const r = by.get(c.id); return { label: `${r.code || '-'} ${r.name || ''}`.trim(), from: `Masuk ${nf.format(r.inn)} · Keluar ${nf.format(r.outt)}`, to: `Masuk ${nf.format(c.in)} · Keluar ${nf.format(c.out)}` }; });
+    return locked
+      ? { title: `Ajukan ${list.length} perubahan ke Accounting?`, intro: `Alasan: ${String(fd.get('reason') || '').trim()}. Data baru berlaku setelah disetujui.`, rows: list, confirmText: 'Ajukan perubahan' }
+      : { title: `Simpan ${list.length} perubahan mutasi ${month}?`, intro: 'Jumlah Masuk/Keluar lama akan diganti dengan nilai baru berikut.', rows: list, confirmText: 'Simpan' };
+  };
   return (
-    <form action={action}>
+    <ConfirmForm action={action} build={build}>
       <input type="hidden" name="month" value={month} />
       <input type="hidden" name="payload" value={JSON.stringify(changed)} />
       <div className="bar">
@@ -56,6 +65,6 @@ export default function Grid({ rows, month, prev, locked }) {
         <tbody>{rows.map((r) => <Row key={r.id} r={r} v={vals[r.id]} onChange={onChange} locked={locked}
           show={!f || `${r.code || ''} ${r.name || ''} ${r.spec || ''} ${r.group || ''}`.toLowerCase().includes(f)} />)}</tbody>
       </table></div>
-    </form>
+    </ConfirmForm>
   );
 }

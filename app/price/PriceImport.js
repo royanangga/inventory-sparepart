@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ConfirmDialog from '../ConfirmDialog';
 
 const pad = (n) => String(n).padStart(2, '0');
 function iso(v) {
@@ -11,12 +12,13 @@ function iso(v) {
 }
 const txt = (v) => (v == null ? null : String(v).trim() || null);
 
-export default function PriceImport() {
+export default function PriceImport({ current = 0 }) {
   const router = useRouter();
   const [info, setInfo] = useState('');
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState('');
+  const [dlg, setDlg] = useState(false);
 
   async function onFile(e) {
     const f = e.target.files[0]; if (!f) return;
@@ -75,7 +77,10 @@ export default function PriceImport() {
         <div>
           <p>{res.read.toLocaleString('id-ID')} baris dibaca → <b>{res.list.length.toLocaleString('id-ID')} item</b> unik. {res.ignored} baris diabaikan (harga ≤ 0 / tanggal kosong / tanggal masa depan).
             {res.conflicts > 0 && <> <b className="warn">{res.conflicts} item</b> punya beberapa supplier dengan Start_Date sama tetapi harga berbeda (dipilih yang Last_Update terbaru, ditandai di halaman stok).</>}</p>
-          <button onClick={save} disabled={busy}>Simpan ke database</button>
+          <button onClick={() => setDlg(true)} disabled={busy}>Simpan ke database</button>
+          <ConfirmDialog open={dlg} title="Simpan price master ke database?" intro={`Berkas ${file}. Harga per Item_Code diperbarui dengan harga Start_Date terbaru.`} confirmText="Simpan ke database"
+            rows={[{ label: 'Item berharga di database', from: current.toLocaleString('id-ID'), to: `diperbarui dari ${res.list.length.toLocaleString('id-ID')} item` }, { label: 'Item dengan harga beda antar supplier', from: '—', to: String(res.conflicts) }]}
+            onConfirm={() => { setDlg(false); save(); }} onCancel={() => setDlg(false)} />
         </div>
       )}
     </div>
