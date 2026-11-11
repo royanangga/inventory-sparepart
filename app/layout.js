@@ -15,7 +15,7 @@ export const metadata = {
   openGraph: { type: 'website', locale: 'id_ID', siteName: 'Inventory Sparepart', title: 'Inventory Sparepart — Stok & Mutasi Gudang', description: desc },
   robots: { index: true, follow: true },
 };
-export const viewport = { themeColor: '#0e2a33', width: 'device-width', initialScale: 1 };
+export const viewport = { themeColor: '#22c5cd', width: 'device-width', initialScale: 1 };
 export default async function RootLayout({ children }) {
   const u = getUser();
   let pending = 0;
@@ -31,7 +31,7 @@ export default async function RootLayout({ children }) {
       <div className={u ? 'shell' : ''}>
         {u && (
           <aside>
-            <header><b className="logo">Inventory<br />Sparepart</b></header>
+            <header><b className="logo" role="img" aria-label="Inventory Sparepart">IS</b></header>
             <Nav items={items} />
           </aside>)}
         {u && <header className="topbar"><b className="tb-logo">Inventory Sparepart</b><UserMenu name={u.name} role={u.role === 'accounting' ? 'Accounting' : 'Gudang'} /></header>}

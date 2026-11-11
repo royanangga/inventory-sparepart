@@ -1,5 +1,5 @@
 const cmp = new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 });
-export const COL = ['#0f766e', '#f2a900', '#64748b', '#c2410c'];
+export const COL = ['#22c5cd', '#ffc94d', '#6c5ce7', '#f97316'];
 export function Bars({ data, label }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
@@ -15,7 +15,7 @@ export function Donut({ parts, center, sub, label }) {
   return (
     <div className="donut">
       <svg viewBox="0 0 140 140" role="img" aria-label={label}>
-        <circle cx="70" cy="70" r={R} fill="none" stroke="#e6ecef" strokeWidth="16" />
+        <circle cx="70" cy="70" r={R} fill="none" stroke="#e3f3f5" strokeWidth="16" />
         {parts.map((p, i) => { const len = (p.value / tot) * C, off = -acc; acc += len;
           return <circle key={i} className="seg" cx="70" cy="70" r={R} fill="none" stroke={p.color} strokeWidth="16" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={off} transform="rotate(-90 70 70)" style={{ '--len': len, '--c': C, animationDelay: `${i * 150}ms` }} />; })}
         <text x="70" y="68" textAnchor="middle" className="dn">{center}</text><text x="70" y="86" textAnchor="middle" className="ds">{sub}</text>
