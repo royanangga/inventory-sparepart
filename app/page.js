@@ -16,7 +16,7 @@ export default async function Home({ searchParams: sp }) {
   const [y, mo] = m.split('-').map(Number);
   const start = `${m}-01`, next = new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 10);
 
-  const params = [w.id, start, next];
+  const params = [w.id, start, next, m];
   let where = 'i.warehouse_id=$1';
   if (sp.q) { params.push(`%${sp.q}%`); const n = params.length; where += ` AND (i.code ILIKE $${n} OR i.name ILIKE $${n} OR i.spec ILIKE $${n} OR i.machine ILIKE $${n} OR i.group_name ILIKE $${n})`; }
   if (acc && sp.nop === '1') where += ' AND p.item_code IS NULL';
@@ -30,7 +30,7 @@ export default async function Home({ searchParams: sp }) {
         SUM(CASE WHEN date>=$2 AND type='IN' THEN qty ELSE 0 END) inn,
         SUM(CASE WHEN date>=$2 AND type='OUT' THEN qty ELSE 0 END) outt
       FROM movements WHERE date<$3 GROUP BY item_id) m ON m.item_id=i.id
-    LEFT JOIN price_master p ON p.item_code=i.code
+    LEFT JOIN price_master p ON p.item_code=i.code AND p.month=$4
     LEFT JOIN currency_rates cr ON cr.code=COALESCE(p.currency_code,'03')
     WHERE ${where} ORDER BY i.group_name, i.id`, params);
 

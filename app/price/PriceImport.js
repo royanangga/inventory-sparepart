@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ConfirmDialog from '../ConfirmDialog';
+import PeriodPicker from '../PeriodPicker';
 
 const pad = (n) => String(n).padStart(2, '0');
 function iso(v) {
@@ -12,16 +13,20 @@ function iso(v) {
 }
 const txt = (v) => (v == null ? null : String(v).trim() || null);
 
-export default function PriceImport({ current = 0 }) {
+const lastDay = (m) => { const [y, mo] = m.split('-').map(Number); return `${m}-${pad(new Date(y, mo, 0).getDate())}`; };
+
+export default function PriceImport({ counts = {}, defaultMonth, maxMonth }) {
   const router = useRouter();
   const [info, setInfo] = useState('');
   const [res, setRes] = useState(null);
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState('');
   const [dlg, setDlg] = useState(false);
+  const [month, setMonth] = useState(defaultMonth);
 
   async function onFile(e) {
     const f = e.target.files[0]; if (!f) return;
+    if (!month) { setInfo('Pilih periode yang valid dulu.'); e.target.value = ''; return; }
     setBusy(true); setRes(null); setFile(f.name); setInfo('Membaca file (file besar, tunggu sebentar)…');
     try {
       const XLSX = await import('xlsx');
@@ -33,12 +38,12 @@ export default function PriceImport({ current = 0 }) {
       const ix = (n) => H.indexOf(n);
       const [cc, cp, cd, cl, cu, ct, cn, cr] = ['item_code', 'price', 'start_date', 'last_update', 'unit_cls', 'trade_code', 'trade_name', 'currency_code'].map(ix);
       if (cc < 0 || cp < 0 || cd < 0) throw new Error('Kolom Item_Code / Price / Start_Date wajib ada');
-      const today = new Date(); const td = iso(today);
+      const td = lastDay(month); // harga yang berlaku s/d akhir periode
       const best = new Map(); let read = 0, ignored = 0;
       for (let i = hi + 1; i < rows.length; i++) {
         const r = rows[i]; const code = txt(r[cc]); if (!code) continue; read++;
         const price = Number(r[cp]), d = iso(r[cd]);
-        if (!(price > 0) || !d || d > td) { ignored++; continue; } // harga 0 / tanggal kosong / tanggal masa depan (mis. 9999) diabaikan
+        if (!(price > 0) || !d || d > td) { ignored++; continue; } // harga 0 / tanggal kosong / Start_Date setelah akhir periode (mis. 9999) diabaikan
         const lu = r[cl] ? String(r[cl]) : '';
         const cand = { c: code, p: price, cur: txt(r[cr]), u: txt(r[cu]), t: txt(r[ct]), tn: txt(r[cn]), d, f: false, lu };
         const b = best.get(code);
@@ -47,7 +52,7 @@ export default function PriceImport({ current = 0 }) {
       }
       rows = null;
       const list = [...best.values()];
-      setRes({ list, read, ignored, conflicts: list.filter((x) => x.f).length });
+      setRes({ month, list, read, ignored, conflicts: list.filter((x) => x.f).length });
       setInfo('');
     } catch (err) { setInfo('Gagal: ' + err.message); }
     setBusy(false);
@@ -59,27 +64,28 @@ export default function PriceImport({ current = 0 }) {
       const { list } = res, size = 2000;
       for (let i = 0; i < list.length; i += size) {
         setInfo(`Menyimpan ${Math.min(i + size, list.length)} / ${list.length}…`);
-        const r = await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: list.slice(i, i + size) }) });
+        const r = await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ month: res.month, first: i === 0, rows: list.slice(i, i + size) }) });
         if (!r.ok) throw new Error('Server menolak data (' + r.status + ')');
       }
-      await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ done: 1, filename: file, rowsRead: res.read, items: list.length, conflicts: res.conflicts }) });
-      setInfo(`Selesai: ${list.length} item tersimpan.`); setRes(null); router.refresh();
+      await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ done: 1, month: res.month, filename: file, rowsRead: res.read, items: list.length, conflicts: res.conflicts }) });
+      setInfo(`Selesai: ${list.length} item tersimpan untuk periode ${res.month}.`); setRes(null); router.refresh();
     } catch (err) { setInfo('Gagal: ' + err.message); }
     setBusy(false);
   }
 
   return (
     <div className="card">
-      <p>Pilih file price master (.xlsx). Sistem mengambil <b>harga dengan Start_Date terbaru per Item_Code</b>; file dibaca di browser, lalu hasil ringkasnya saja yang dikirim ke server.</p>
-      <input type="file" accept=".xlsx,.xls" onChange={onFile} disabled={busy} />
+      <p>Pilih <b>periode</b> lalu file price master (.xlsx). Harga yang diupload berlaku untuk <b>jurnal adjustment dan laporan periode tersebut</b>. Sistem mengambil <b>harga dengan Start_Date terbaru per Item_Code</b> (paling lambat akhir periode); file dibaca di browser, lalu hasil ringkasnya saja yang dikirim ke server.</p>
+      <div className="bar"><b>Periode</b> <PeriodPicker name="month" defaultValue={defaultMonth} min="2026-10" max={maxMonth} onChange={(v) => { setMonth(v); setRes(null); }} /></div>
+      <input type="file" accept=".xlsx,.xls" onChange={onFile} disabled={busy || !month} />
       {info && <p>{info}</p>}
       {res && (
         <div>
-          <p>{res.read.toLocaleString('id-ID')} baris dibaca → <b>{res.list.length.toLocaleString('id-ID')} item</b> unik. {res.ignored} baris diabaikan (harga ≤ 0 / tanggal kosong / tanggal masa depan).
+          <p>{res.read.toLocaleString('id-ID')} baris dibaca → <b>{res.list.length.toLocaleString('id-ID')} item</b> unik. {res.ignored} baris diabaikan (harga ≤ 0 / tanggal kosong / Start_Date setelah akhir periode {res.month}).
             {res.conflicts > 0 && <> <b className="warn">{res.conflicts} item</b> punya beberapa supplier dengan Start_Date sama tetapi harga berbeda (dipilih yang Last_Update terbaru, ditandai di halaman stok).</>}</p>
           <button onClick={() => setDlg(true)} disabled={busy}>Simpan ke database</button>
-          <ConfirmDialog open={dlg} title="Simpan price master ke database?" intro={`Berkas ${file}. Harga per Item_Code diperbarui dengan harga Start_Date terbaru.`} confirmText="Simpan ke database"
-            rows={[{ label: 'Item berharga di database', from: current.toLocaleString('id-ID'), to: `diperbarui dari ${res.list.length.toLocaleString('id-ID')} item` }, { label: 'Item dengan harga beda antar supplier', from: '—', to: String(res.conflicts) }]}
+          <ConfirmDialog open={dlg} title={`Simpan price master periode ${res.month}?`} intro={`Berkas ${file}. Seluruh harga periode ${res.month} akan diganti dengan isi berkas ini (periode lain tidak berubah).`} confirmText="Simpan ke database"
+            rows={[{ label: `Item berharga periode ${res.month}`, from: (counts[res.month] || 0).toLocaleString('id-ID'), to: res.list.length.toLocaleString('id-ID') }, { label: 'Item dengan harga beda antar supplier', from: '—', to: String(res.conflicts) }]}
             onConfirm={() => { setDlg(false); save(); }} onCancel={() => setDlg(false)} />
         </div>
       )}

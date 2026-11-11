@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 // Bulan dipilih dari daftar Jan-Des, tahun diketik manual; nilai dikirim sebagai name="m" format YYYY-MM
-export default function PeriodPicker({ name = 'm', defaultValue, min, max }) {
+export default function PeriodPicker({ name = 'm', defaultValue, min, max, onChange }) {
   const [y0, m0] = defaultValue.split('-');
   const [y, setY] = useState(y0), [m, setM] = useState(m0);
   const v = /^\d{4}$/.test(y) ? `${y}-${m}` : '';
+  useEffect(() => { if (onChange) onChange(v && (!min || v >= min) && (!max || v <= max) ? v : ''); }, [v]); // eslint-disable-line react-hooks/exhaustive-deps
   const hint = !v ? 'Tahun harus 4 angka, mis. 2026' : (min && v < min) || (max && v > max) ? `Periode tersedia ${min || '…'} s/d ${max || '…'}` : '';
   return (
     <span className="period">

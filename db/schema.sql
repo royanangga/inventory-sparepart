@@ -51,3 +51,12 @@ CREATE TABLE IF NOT EXISTS recon (
   gl_in numeric NOT NULL DEFAULT 0, gl_out numeric NOT NULL DEFAULT 0, je_ref text, note text,
   posted boolean NOT NULL DEFAULT false, updated_by text, updated_at timestamptz DEFAULT now(),
   PRIMARY KEY (month, warehouse_id));
+-- Price master per periode (YYYY-MM): harga yang diupload di periode X dipakai untuk jurnal adjustment & laporan periode X.
+-- Data lama (sebelum ada periode) dianggap periode 2026-10.
+ALTER TABLE price_master ADD COLUMN IF NOT EXISTS month text;
+UPDATE price_master SET month = '2026-10' WHERE month IS NULL;
+ALTER TABLE price_master ALTER COLUMN month SET NOT NULL;
+DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'price_master'::regclass AND contype = 'p' AND pg_get_constraintdef(oid) NOT LIKE '%month%') THEN
+  ALTER TABLE price_master DROP CONSTRAINT price_master_pkey; ALTER TABLE price_master ADD PRIMARY KEY (month, item_code); END IF; END $$;
+ALTER TABLE price_imports ADD COLUMN IF NOT EXISTS month text;
+UPDATE price_imports SET month = '2026-10' WHERE month IS NULL;

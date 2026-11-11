@@ -8,7 +8,7 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 3. Vercel > Storage > buat Postgres (Neon) dan sambungkan ke project (otomatis mengisi `DATABASE_URL`).
 4. Settings > Environment Variables: tambah `AUTH_SECRET` (acak panjang) dan `SETUP_TOKEN` (acak). Deploy / Redeploy.
 5. Buka `https://<domain-anda>/api/setup?token=<SETUP_TOKEN>` sekali: tabel dibuat, data Sep/Okt 2026 dimasukkan, password user ditampilkan.
-6. Hapus `SETUP_TOKEN` di Vercel lalu Redeploy. Login `accounting` > Price Master > upload file.
+6. Hapus `SETUP_TOKEN` di Vercel lalu Redeploy. Login `accounting` > Price Master > pilih periode > upload file.
 (Alternatif lokal: `npm install && npm run setup` dengan `.env.local`.)
 
 ## Alur input bulanan
@@ -26,4 +26,5 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 ## Aturan penting
 - Satu baris Excel = satu baris barang (kode yang sama bisa muncul beberapa kali di gudang yang sama, mis. sisi R/L).
 - Stok awal = kolom STOCK SEP. IN/OUT Oktober masuk sebagai mutasi tertanggal 31 Okt 2026; mutasi berikutnya diinput gudang.
-- Harga: per `Item_Code`, baris dengan **Start_Date terbaru** (≤ hari ini; harga ≤ 0 diabaikan). Bila beberapa supplier punya Start_Date sama dengan harga beda, dipilih `Last_Update` terbaru dan ditandai.
+- Harga: **price master per periode (bulan)**. Saat upload, pilih periode; harga itu dipakai untuk jurnal adjustment/rekonsiliasi dan laporan/stok periode tersebut (tidak ada fallback ke periode lain). Upload ulang periode yang sama = mengganti seluruh harga periode itu. Data price master lama otomatis menjadi periode 2026-10. Kurs ke IDR masih satu untuk semua periode.
+- Pemilihan harga per `Item_Code`: baris dengan **Start_Date terbaru** (≤ akhir periode; harga ≤ 0 diabaikan). Bila beberapa supplier punya Start_Date sama dengan harga beda, dipilih `Last_Update` terbaru dan ditandai.

@@ -24,7 +24,7 @@ export default async function Rekon({ searchParams: sp = {} }) {
       <div className="card"><b>Cara kerja.</b> Pembelian periode ini umumnya langsung dibebankan ke Beban, sedangkan sebagian part sudah benar masuk Persediaan di GL.
         Data <b>IN</b> aplikasi seharusnya ada di akun <b>Persediaan</b>; data <b>OUT</b> aplikasi seharusnya ada di akun <b>Beban</b>.
         Isi nilai yang <b>sudah tercatat di Persediaan GL</b> (debit pembelian = IN, kredit pemakaian = OUT), selisihnya menjadi jurnal penyesuaian.
-        <div className="muted">Nilai aplikasi = qty × harga price master × kurs (harga terbaru saat ini).</div></div>
+        <div className="muted">Nilai aplikasi = qty × harga price master × kurs (harga price master periode {m}).</div></div>
       {open.length > 0 && <p className="warn">Bulan {m} belum dikunci di: {open.map((w) => w.label).join(', ')}. Angka bisa berubah sampai gudang mengunci bulan.</p>}
       {nop > 0 && <p className="warn">{nop} baris barang bergerak tanpa harga/kurs — nilainya belum ikut terhitung. Lengkapi di Price Master.</p>}
       <div className="cards" style={{ marginBottom: 12 }}>
