@@ -3,7 +3,8 @@ import { requireUser } from '../../lib/auth';
 import { thisMonth, validMonth } from '../../lib/util';
 import Decision from './Decision';
 export const dynamic = 'force-dynamic';
-const AC = { ADD: 'Tambah', EDIT: 'Ubah', DELETE: 'Hapus' };
+const AC = { ADD: 'Tambah', EDIT: 'Ubah', DELETE: 'Hapus', SET: 'Koreksi bulanan' };
+const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const T = (t) => (t === 'IN' ? 'Masuk' : 'Keluar');
 const SELECT = `SELECT r.*, w.name wh, i.code icode, i.name iname FROM change_requests r JOIN warehouses w ON w.id=r.warehouse_id LEFT JOIN items i ON i.id=r.item_id`;
 
@@ -14,8 +15,8 @@ export default async function Approval({ searchParams: sp }) {
   const done = await q(`${SELECT} WHERE r.status<>'PENDING' ORDER BY r.decided_at DESC LIMIT 20`);
   const locks = await q('SELECT w.name, l.locked_by, l.locked_at FROM warehouses w LEFT JOIN period_locks l ON l.warehouse_id=w.id AND l.month=$1 ORDER BY w.id', [m]);
   const label = (r) => `${r.snapshot?.code || r.icode || '-'} ${r.snapshot?.name || r.iname || ''}`;
-  const before = (r) => (r.action === 'ADD' ? '—' : `${T(r.snapshot.type)} ${r.snapshot.qty} · ${r.snapshot.date}`);
-  const after = (r) => (r.action === 'DELETE' ? <b className="warn">dihapus</b> : `${T(r.type)} ${r.qty} · ${r.date}${r.note ? ' · ' + r.note : ''}`);
+  const before = (r) => (r.action === 'SET' ? `Masuk ${nf.format(r.snapshot.old_in)} / Keluar ${nf.format(r.snapshot.old_out)}` : r.action === 'ADD' ? '—' : `${T(r.snapshot.type)} ${r.snapshot.qty} · ${r.snapshot.date}`);
+  const after = (r) => (r.action === 'SET' ? `Masuk ${nf.format(r.new_in)} / Keluar ${nf.format(r.new_out)}` : r.action === 'DELETE' ? <b className="warn">dihapus</b> : `${T(r.type)} ${r.qty} · ${r.date}${r.note ? ' · ' + r.note : ''}`);
   return (
     <>
       <h1>Approval Perubahan</h1>

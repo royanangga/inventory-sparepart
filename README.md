@@ -12,8 +12,9 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 (Alternatif lokal: `npm install && npm run setup` dengan `.env.local`.)
 
 ## Alur input bulanan
-- User gudang menginput masuk/keluar di menu **Input Mutasi** selama bulan masih terbuka (boleh dihapus), lalu klik **kunci bulan**.
-- Setelah terkunci, perubahan (tambah / ubah / hapus mutasi) hanya lewat **permintaan** dengan alasan; Accounting menyetujui atau menolak di menu **Approval**. Yang disetujui langsung diterapkan.
+- Menu **Input Mutasi** menampilkan semua item gudang dengan stok akhir bulan lalu. User mengetik jumlah **Masuk** dan **Keluar** per item; saldo dihitung otomatis. Klik **Simpan**, lalu **kunci bulan** bila sudah benar.
+- Setiap item menyimpan satu total Masuk dan satu total Keluar per bulan (tanggal akhir bulan).
+- Setelah terkunci, tabel yang sama dipakai untuk mengajukan koreksi dengan alasan; Accounting menyetujui atau menolak di menu **Approval**, yang disetujui langsung diterapkan.
 - Oktober 2026 (data import awal) otomatis terkunci. Tabel baru dibuat otomatis saat aplikasi pertama kali dibuka setelah update.
 
 ## Aturan penting

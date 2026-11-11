@@ -1,56 +1,46 @@
 import { q } from '../../lib/db';
 import { requireUser } from '../../lib/auth';
-import { deleteMovement } from '../../lib/actions';
-import { today, thisMonth, validMonth, monthRange } from '../../lib/util';
-import MutasiForm from './MutasiForm';
+import { thisMonth, validMonth, monthRange } from '../../lib/util';
+import Grid from './Grid';
 import LockForm from './LockForm';
-import RequestForm from './RequestForm';
 export const dynamic = 'force-dynamic';
 const ST = { PENDING: 'Menunggu', APPROVED: 'Disetujui', REJECTED: 'Ditolak' };
-const AC = { ADD: 'Tambah', EDIT: 'Ubah', DELETE: 'Hapus' };
+const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 
 export default async function Mutasi({ searchParams: sp }) {
   const u = requireUser('gudang');
   const m = validMonth(sp.m) ? sp.m : thisMonth();
-  const [min, max] = monthRange(m), def = m === thisMonth() ? today() : max;
+  const [start, end] = monthRange(m);
+  const [y, mo] = m.split('-').map(Number);
+  const prev = new Date(Date.UTC(y, mo - 2, 1)).toISOString().slice(0, 7);
   const [lock] = await q('SELECT * FROM period_locks WHERE warehouse_id=$1 AND month=$2', [u.wh, m]);
-  const items = await q('SELECT id, code, name, spec FROM items WHERE warehouse_id=$1 ORDER BY group_name, id', [u.wh]);
-  const movs = await q(`SELECT m.id, m.date, m.type, m.qty, m.note, m.created_by, i.code, i.name FROM movements m JOIN items i ON i.id=m.item_id
-    WHERE i.warehouse_id=$1 AND m.date>=$2 AND m.date<=$3 ORDER BY m.date DESC, m.id DESC`, [u.wh, min, max]);
-  const reqs = await q(`SELECT r.*, i.code, i.name FROM change_requests r LEFT JOIN items i ON i.id=r.item_id WHERE r.warehouse_id=$1 ORDER BY r.id DESC LIMIT 20`, [u.wh]);
+  const rows = (await q(`
+    SELECT i.id, i.group_name "group", i.code, i.name, i.spec, i.stock_sep + COALESCE(p.pre,0) AS open,
+      COALESCE(c.inn,0) AS inn, COALESCE(c.outt,0) AS outt, (pr.item_id IS NOT NULL) AS pend
+    FROM items i
+    LEFT JOIN (SELECT item_id, SUM(CASE type WHEN 'IN' THEN qty ELSE -qty END) pre FROM movements WHERE date<$2 GROUP BY item_id) p ON p.item_id=i.id
+    LEFT JOIN (SELECT item_id, SUM(CASE WHEN type='IN' THEN qty ELSE 0 END) inn, SUM(CASE WHEN type='OUT' THEN qty ELSE 0 END) outt
+               FROM movements WHERE date>=$2 AND date<=$3 GROUP BY item_id) c ON c.item_id=i.id
+    LEFT JOIN (SELECT DISTINCT item_id FROM change_requests WHERE status='PENDING' AND action='SET' AND month=$4) pr ON pr.item_id=i.id
+    WHERE i.warehouse_id=$1 ORDER BY i.group_name, i.id`, [u.wh, start, end, m]));
+  const key = `${m}-${!!lock}-${rows.reduce((a, r) => a + r.inn * 3 + r.outt * 7 + (r.pend ? 1000 : 0), 0)}`;
+  const reqs = await q('SELECT r.*, i.code, i.name FROM change_requests r LEFT JOIN items i ON i.id=r.item_id WHERE r.warehouse_id=$1 ORDER BY r.id DESC LIMIT 30', [u.wh]);
+  const usul = (r) => r.action === 'SET' ? `Masuk ${nf.format(r.new_in)} / Keluar ${nf.format(r.new_out)}` : r.action === 'DELETE' ? 'Hapus' : `${r.type === 'IN' ? 'Masuk' : 'Keluar'} ${r.qty} · ${r.date}`;
   return (
     <>
       <h1>Input Mutasi — {u.name}</h1>
       <form className="bar"><input type="month" name="m" defaultValue={m} min="2026-10" max={thisMonth()} /><button>Tampilkan</button></form>
-      {lock ? (
-        <>
-          <div className="card"><b>Bulan {m} terkunci</b> <span className="muted">oleh {lock.locked_by} pada {new Date(lock.locked_at).toLocaleString('id-ID')}. Perubahan harus disetujui Accounting.</span></div>
-          <h3>Ajukan perubahan</h3>
-          <RequestForm items={items} movs={movs} min={min} max={max} def={def} />
-        </>
-      ) : (
-        <>
-          <MutasiForm items={items} min={min} max={max} def={def} />
-          <div className="card bar" style={{ justifyContent: 'space-between' }}>
-            <span className="muted">Bulan {m} masih terbuka: data boleh ditambah atau dihapus. Setelah selesai, kunci bulan ini.</span>
-            <LockForm month={m} />
-          </div>
-        </>)}
-      <h3>Mutasi {m}</h3>
-      <div className="wrap"><table>
-        <thead><tr><th>Tanggal</th><th>Jenis</th><th className="n">Qty</th><th>Kode</th><th>Item</th><th>Catatan</th><th>Oleh</th><th></th></tr></thead>
-        <tbody>{movs.map((r) => (
-          <tr key={r.id}><td>{r.date}</td><td>{r.type === 'IN' ? 'Masuk' : 'Keluar'}</td><td className="n">{r.qty}</td><td>{r.code}</td><td>{r.name}</td><td>{r.note}</td><td>{r.created_by}</td>
-            <td>{!lock && <form action={deleteMovement}><input type="hidden" name="id" value={r.id} /><button>Hapus</button></form>}</td></tr>))}
-          {!movs.length && <tr><td colSpan={8} className="muted">Belum ada mutasi di bulan ini.</td></tr>}</tbody>
-      </table></div>
+      {lock
+        ? <div className="card"><b>Bulan {m} terkunci</b> <span className="muted">oleh {lock.locked_by} pada {new Date(lock.locked_at).toLocaleString('id-ID')}. Ubah angka Masuk/Keluar yang perlu dikoreksi, isi alasan, lalu ajukan ke Accounting.</span></div>
+        : <div className="card"><span className="muted">Bulan {m} terbuka. Stok akhir {prev} terisi otomatis; ketik jumlah <b>Masuk</b> dan/atau <b>Keluar</b> bulan ini (kosong = 0), saldo terhitung otomatis. Klik <b>Simpan</b>, dan setelah semuanya benar klik kunci bulan di bawah tabel.</span></div>}
+      <Grid key={key} rows={rows} month={m} prev={prev} locked={!!lock} />
+      {!lock && <div className="card bar" style={{ justifyContent: 'space-between', marginTop: 12 }}><span className="muted">Pastikan perubahan sudah disimpan sebelum mengunci.</span><LockForm month={m} /></div>}
       <h3>Permintaan perubahan saya</h3>
       <div className="wrap"><table>
-        <thead><tr><th>#</th><th>Bulan</th><th>Jenis</th><th>Barang</th><th>Usulan</th><th>Alasan</th><th>Status</th><th>Catatan Accounting</th></tr></thead>
+        <thead><tr><th>#</th><th>Bulan</th><th>Barang</th><th>Usulan</th><th>Alasan</th><th>Status</th><th>Catatan Accounting</th></tr></thead>
         <tbody>{reqs.map((r) => (
-          <tr key={r.id}><td>{r.id}</td><td>{r.month}</td><td>{AC[r.action]}</td><td>{r.snapshot?.code || r.code} {r.snapshot?.name || r.name}</td>
-            <td>{r.action === 'DELETE' ? 'Hapus' : `${r.type === 'IN' ? 'Masuk' : 'Keluar'} ${r.qty} · ${r.date}`}</td><td>{r.reason}</td><td>{ST[r.status]}</td><td>{r.decision_note}</td></tr>))}
-          {!reqs.length && <tr><td colSpan={8} className="muted">Belum ada permintaan.</td></tr>}</tbody>
+          <tr key={r.id}><td>{r.id}</td><td>{r.month}</td><td>{r.snapshot?.code || r.code} {r.snapshot?.name || r.name}</td><td>{usul(r)}</td><td>{r.reason}</td><td>{ST[r.status]}</td><td>{r.decision_note}</td></tr>))}
+          {!reqs.length && <tr><td colSpan={7} className="muted">Belum ada permintaan.</td></tr>}</tbody>
       </table></div>
     </>
   );
