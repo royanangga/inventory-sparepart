@@ -3,6 +3,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import { useFormState } from 'react-dom';
 import { saveGrid, requestGrid } from '../../lib/actions';
 import ConfirmForm from '../ConfirmForm';
+import Pager from '../Pager';
 const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const parse = (s) => { const t = String(s ?? '').trim().replace(',', '.'); return t === '' ? 0 : Number(t); };
 
@@ -25,6 +26,7 @@ export default function Grid({ rows, month, prev, locked }) {
   const init = useMemo(() => Object.fromEntries(rows.map((r) => [r.id, { in: r.inn ? String(r.inn) : '', out: r.outt ? String(r.outt) : '' }])), [rows]);
   const [vals, setVals] = useState(init);
   const [filter, setFilter] = useState('');
+  const [pg, setPg] = useState(1), [ps, setPs] = useState(50);
   const [state, action] = useFormState(locked ? requestGrid : saveGrid, {});
   const onChange = useCallback((id, k, val) => setVals((p) => ({ ...p, [id]: { ...p[id], [k]: val } })), []);
   const { changed, invalid } = useMemo(() => {
@@ -38,6 +40,8 @@ export default function Grid({ rows, month, prev, locked }) {
     return { changed, invalid };
   }, [rows, vals]);
   const f = filter.trim().toLowerCase();
+  const list = rows.filter((r) => !f || `${r.code || ''} ${r.name || ''} ${r.spec || ''} ${r.group || ''}`.toLowerCase().includes(f));
+  const cur = Math.min(pg, Math.max(1, Math.ceil(list.length / ps))), view = list.slice((cur - 1) * ps, cur * ps);
   const total = rows.reduce((a, r) => { const v = vals[r.id], i = parse(v.in), o = parse(v.out); return a + r.open + (Number.isNaN(i) ? 0 : i) - (Number.isNaN(o) ? 0 : o); }, 0);
   const build = (fd) => {
     if (!changed.length) return null;
@@ -52,7 +56,7 @@ export default function Grid({ rows, month, prev, locked }) {
       <input type="hidden" name="month" value={month} />
       <input type="hidden" name="payload" value={JSON.stringify(changed)} />
       <div className="bar">
-        <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Cari kode / item / spesifikasi (tidak menghapus isian)" size={46} />
+        <input value={filter} onChange={(e) => { setFilter(e.target.value); setPg(1); }} placeholder="Cari kode / item / spesifikasi (tidak menghapus isian)" size={46} />
         {locked && <input name="reason" placeholder="Alasan perubahan (wajib)" size={44} required />}
         <button disabled={!changed.length || invalid > 0}>{locked ? 'Ajukan perubahan' : 'Simpan'} ({changed.length} baris diubah)</button>
         <span className="muted">Total saldo: <b>{nf.format(total)}</b></span>
@@ -62,9 +66,9 @@ export default function Grid({ rows, month, prev, locked }) {
       {state?.ok && <div className="ok">{state.ok}</div>}
       <div className="wrap" style={{ maxHeight: '70vh' }}><table>
         <thead><tr><th>Kelompok</th><th>Kode</th><th>Item</th><th>Spesifikasi</th><th className="n">Stok akhir {prev}</th><th className="n">Masuk (+)</th><th className="n">Keluar (−)</th><th className="n">Saldo</th></tr></thead>
-        <tbody>{rows.map((r) => <Row key={r.id} r={r} v={vals[r.id]} onChange={onChange} locked={locked}
-          show={!f || `${r.code || ''} ${r.name || ''} ${r.spec || ''} ${r.group || ''}`.toLowerCase().includes(f)} />)}</tbody>
+        <tbody>{view.map((r) => <Row key={r.id} r={r} v={vals[r.id]} onChange={onChange} locked={locked} show />)}</tbody>
       </table></div>
+      <Pager page={cur} size={ps} total={list.length} onPage={setPg} onSize={(n) => { setPs(n); setPg(1); }} />
     </ConfirmForm>
   );
 }

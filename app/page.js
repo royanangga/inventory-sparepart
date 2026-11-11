@@ -40,7 +40,10 @@ export default async function Home({ searchParams: sp }) {
     if (r.price == null) noPrice++; else if (r.rate == null) noRate++; else totalVal += val;
     return { ...r, open, bal, val };
   });
-  const qs = (o) => '?' + new URLSearchParams({ w: w.code, m, ...(sp.q ? { q: sp.q } : {}), ...o }).toString();
+  const ps = [25, 50, 100, 200].includes(+sp.ps) ? +sp.ps : 50, pages = Math.max(1, Math.ceil(data.length / ps));
+  const pg = Math.min(Math.max(parseInt(sp.p, 10) || 1, 1), pages), view = data.slice((pg - 1) * ps, pg * ps);
+  const qs = (o) => '?' + new URLSearchParams({ w: w.code, m, ps, ...(sp.q ? { q: sp.q } : {}), ...(acc && sp.nop === '1' ? { nop: '1' } : {}), ...o }).toString();
+  const nums = [...new Set([1, pages, pg - 1, pg, pg + 1])].filter((x) => x >= 1 && x <= pages).sort((a, b) => a - b).flatMap((x, i, a) => (i && x - a[i - 1] > 1 ? ['…', x] : [x]));
 
   return (
     <>
@@ -51,6 +54,7 @@ export default async function Home({ searchParams: sp }) {
         <input type="month" name="m" defaultValue={m} min="2026-10" />
         <input name="q" defaultValue={sp.q || ''} placeholder="Cari kode / item / spesifikasi / mesin" size={38} />
         {acc && <label><input type="checkbox" name="nop" value="1" defaultChecked={sp.nop === '1'} /> hanya tanpa harga</label>}
+        <select name="ps" defaultValue={ps} aria-label="Baris per halaman">{[25, 50, 100, 200].map((n) => <option key={n} value={n}>{n} baris</option>)}</select>
         <button>Tampilkan</button>
       </form>
       <div className="cards" style={{ marginBottom: 12 }}>
@@ -62,7 +66,7 @@ export default async function Home({ searchParams: sp }) {
       <div className="wrap"><table>
         <thead><tr><th>Kelompok</th><th>Kode</th><th>Item</th><th>Spesifikasi</th><th className="n">Stok awal</th><th className="n">Masuk</th><th className="n">Keluar</th><th className="n">Saldo</th>
           {acc && <><th className="n">Harga</th><th>Supplier / tgl harga</th><th className="n">Nilai (IDR)</th></>}</tr></thead>
-        <tbody>{data.map((r) => (
+        <tbody>{view.map((r) => (
           <tr key={r.id}>
             <td>{r.group_name}{r.part_no ? <div className="muted">{r.part_no}</div> : null}</td>
             <td>{r.code || <span className="warn">—</span>}</td><td>{r.name}</td><td>{r.spec}</td>
@@ -73,6 +77,14 @@ export default async function Home({ searchParams: sp }) {
               <td className="n">{r.val == null && r.price != null ? <span className="warn">kurs?</span> : fmt(r.val)}</td></>}
           </tr>))}
         </tbody></table></div>
+      <nav className="pager" aria-label="Halaman tabel">
+        <span className="muted">Menampilkan {data.length ? (pg - 1) * ps + 1 : 0}–{Math.min(pg * ps, data.length)} dari {data.length} baris</span>
+        <span className="pg">
+          {pg > 1 ? <Link className="pbtn" href={qs({ p: pg - 1 })} rel="prev">Sebelumnya</Link> : <span className="pbtn off">Sebelumnya</span>}
+          {nums.map((x, i) => x === '…' ? <span key={i} className="muted">…</span> : <Link key={x} className={x === pg ? 'pbtn cur' : 'pbtn'} href={qs({ p: x })} aria-current={x === pg ? 'page' : undefined}>{x}</Link>)}
+          {pg < pages ? <Link className="pbtn" href={qs({ p: pg + 1 })} rel="next">Berikutnya</Link> : <span className="pbtn off">Berikutnya</span>}
+        </span>
+      </nav>
     </>
   );
 }
