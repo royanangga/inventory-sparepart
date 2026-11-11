@@ -60,3 +60,13 @@ DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'price_maste
   ALTER TABLE price_master DROP CONSTRAINT price_master_pkey; ALTER TABLE price_master ADD PRIMARY KEY (month, item_code); END IF; END $$;
 ALTER TABLE price_imports ADD COLUMN IF NOT EXISTS month text;
 UPDATE price_imports SET month = '2026-10' WHERE month IS NULL;
+-- Rekonsiliasi per PLANT (Sunter / KIIC / SC1 / SC2), tanpa membedakan gudang/divisi. Data lama (per gudang) dijumlahkan per plant.
+CREATE TABLE IF NOT EXISTS recon_plant (
+  month text NOT NULL, plant text NOT NULL,
+  gl_in numeric NOT NULL DEFAULT 0, gl_out numeric NOT NULL DEFAULT 0, je_ref text, note text,
+  posted boolean NOT NULL DEFAULT false, updated_by text, updated_at timestamptz DEFAULT now(),
+  PRIMARY KEY (month, plant));
+INSERT INTO recon_plant(month, plant, gl_in, gl_out, je_ref, note, posted, updated_by, updated_at)
+  SELECT r.month, w.plant, SUM(r.gl_in), SUM(r.gl_out), string_agg(DISTINCT r.je_ref, ', '), string_agg(DISTINCT r.note, ' | '),
+    bool_and(r.posted), MAX(r.updated_by), MAX(r.updated_at)
+  FROM recon r JOIN warehouses w ON w.id = r.warehouse_id GROUP BY r.month, w.plant ON CONFLICT DO NOTHING;

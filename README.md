@@ -19,9 +19,10 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 - Oktober 2026 (data import awal) otomatis terkunci. Tabel baru dibuat otomatis saat aplikasi pertama kali dibuka setelah update.
 
 ## Rekonsiliasi bulanan (Accounting)
-- Menu **Rekonsiliasi**: bandingkan IN/OUT aplikasi (qty × harga × kurs) dengan nilai yang sudah tercatat di akun Persediaan GL per gudang.
-- IN seharusnya masuk **Persediaan** (Adj IN = IN aplikasi − IN di GL Persediaan; + = Dr Persediaan / Cr Beban). OUT seharusnya masuk **Beban** (Adj OUT = OUT aplikasi − OUT di GL Persediaan; + = Dr Beban / Cr Persediaan).
-- Isi nilai GL per gudang, simpan, lalu lihat draft jurnal; unduh Excel (jurnal + detail IN/OUT per barang) dan catat No. jurnal serta status diposting.
+- Menu **Rekonsiliasi**: bandingkan IN/OUT aplikasi (qty × harga × kurs) dengan nilai yang sudah tercatat di akun Persediaan GL **per plant (Sunter, KIIC, SC1, SC2)**; tidak dipisah per gudang/divisi (KIIC Maintenance + KIIC Stamping digabung jadi KIIC). Status kunci plant = Terkunci bila semua gudang di plant itu terkunci.
+- **IN**: isi nilai IN yang sudah tercatat di Persediaan GL per plant; Reclass IN = IN sistem − IN di GL (+ = Dr Persediaan / Cr Beban).
+- **OUT**: nilai di GL tidak diketahui, jadi tidak diinput. Seluruh OUT sistem langsung dibebankan ke **Beban** (Dr Beban / Cr Persediaan).
+- Isi IN di GL per plant, simpan, lalu lihat draft jurnal; unduh Excel (jurnal + detail IN/OUT per barang) dan catat No. jurnal serta status diposting.
 
 ## Aturan penting
 - Satu baris Excel = satu baris barang (kode yang sama bisa muncul beberapa kali di gudang yang sama, mis. sisi R/L).
