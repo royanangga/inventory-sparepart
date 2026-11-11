@@ -15,6 +15,7 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 - Menu **Input Mutasi** menampilkan semua item gudang dengan stok akhir bulan lalu. User mengetik jumlah **Masuk** dan **Keluar** per item; saldo dihitung otomatis. Klik **Simpan**, lalu **kunci bulan** bila sudah benar.
 - Setiap item menyimpan satu total Masuk dan satu total Keluar per bulan (tanggal akhir bulan).
 - Setelah terkunci, tabel yang sama dipakai untuk mengajukan koreksi dengan alasan; Accounting menyetujui atau menolak di menu **Approval**, yang disetujui langsung diterapkan.
+- Accounting dapat **membuka kunci** bulan per gudang di menu Approval (alasan wajib, tercatat di riwayat). Permintaan yang masih menunggu untuk bulan itu otomatis ditolak; gudang lalu bisa mengubah tabel langsung dan mengunci lagi.
 - Oktober 2026 (data import awal) otomatis terkunci. Tabel baru dibuat otomatis saat aplikasi pertama kali dibuka setelah update.
 
 ## Aturan penting

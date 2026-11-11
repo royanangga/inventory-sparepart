@@ -41,3 +41,7 @@ ALTER TABLE change_requests ADD COLUMN IF NOT EXISTS new_out numeric;
 ALTER TABLE change_requests DROP CONSTRAINT IF EXISTS change_requests_action_check;
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cr_action_chk') THEN
   ALTER TABLE change_requests ADD CONSTRAINT cr_action_chk CHECK (action IN ('ADD','EDIT','DELETE','SET')); END IF; END $$;
+-- Riwayat kunci / buka kunci bulan
+CREATE TABLE IF NOT EXISTS period_events (
+  id serial PRIMARY KEY, warehouse_id int NOT NULL REFERENCES warehouses(id), month text NOT NULL,
+  event text NOT NULL, by_user text, note text, at timestamptz DEFAULT now());
