@@ -2,6 +2,7 @@ import { q } from '../../lib/db';
 import { requireUser } from '../../lib/auth';
 import { thisMonth, validMonth, monthRange } from '../../lib/util';
 import Grid from './Grid';
+import PeriodPicker from '../PeriodPicker';
 import LockForm from './LockForm';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Input Mutasi' };
@@ -30,7 +31,7 @@ export default async function Mutasi({ searchParams: sp }) {
   return (
     <>
       <h1>Input Mutasi — {u.name}</h1>
-      <form className="bar"><input type="month" name="m" defaultValue={m} min="2026-10" max={thisMonth()} /><button>Tampilkan</button></form>
+      <form className="bar"><PeriodPicker defaultValue={m} min="2026-10" max={thisMonth()} /><button>Tampilkan</button></form>
       {lock
         ? <div className="card"><b>Bulan {m} terkunci</b> <span className="muted">oleh {lock.locked_by} pada {new Date(lock.locked_at).toLocaleString('id-ID')}. Ubah angka Masuk/Keluar yang perlu dikoreksi, isi alasan, lalu ajukan ke Accounting.</span></div>
         : <div className="card"><span className="muted">Bulan {m} terbuka. Stok akhir {prev} terisi otomatis; ketik jumlah <b>Masuk</b> dan/atau <b>Keluar</b> bulan ini (kosong = 0), saldo terhitung otomatis. Klik <b>Simpan</b>, dan setelah semuanya benar klik kunci bulan di bawah tabel.</span></div>}

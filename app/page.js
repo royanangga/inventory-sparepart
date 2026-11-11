@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PeriodPicker from './PeriodPicker';
 import { q } from '../lib/db';
 import { requireUser } from '../lib/auth';
 export const dynamic = 'force-dynamic';
@@ -51,7 +52,7 @@ export default async function Home({ searchParams: sp }) {
       <div className="tabs">{whs.map((x) => <Link key={x.code} href={`/?w=${x.code}&m=${m}`} className={x.id === w.id ? 'on' : ''}>{x.plant} · {x.name.replace('Gudang ', '')}</Link>)}</div>
       <form className="bar">
         <input type="hidden" name="w" value={w.code} />
-        <input type="month" name="m" defaultValue={m} min="2026-10" />
+        <PeriodPicker defaultValue={m} min="2026-10" />
         <input name="q" defaultValue={sp.q || ''} placeholder="Cari kode / item / spesifikasi / mesin" size={38} />
         {acc && <label><input type="checkbox" name="nop" value="1" defaultChecked={sp.nop === '1'} /> hanya tanpa harga</label>}
         <select name="ps" defaultValue={ps} aria-label="Baris per halaman">{[25, 50, 100, 200].map((n) => <option key={n} value={n}>{n} baris</option>)}</select>

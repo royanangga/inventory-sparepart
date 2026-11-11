@@ -2,6 +2,7 @@ import { q } from '../../lib/db';
 import { requireUser } from '../../lib/auth';
 import { thisMonth, validMonth } from '../../lib/util';
 import Decision from './Decision';
+import PeriodPicker from '../PeriodPicker';
 import UnlockForm from './UnlockForm';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Approval Perubahan' };
@@ -31,7 +32,7 @@ export default async function Approval({ searchParams: sp }) {
             <td>{r.requested_by}<div className="muted">{new Date(r.requested_at).toLocaleString('id-ID')}</div></td><td><Decision id={r.id} info={{ label: label(r), kind: AC[r.action], before: before(r), after: afterT(r) }} /></td></tr>))}
           {!pending.length && <tr><td colSpan={10} className="muted">Tidak ada permintaan yang menunggu.</td></tr>}</tbody></table></div>
       <h3>Status kunci bulan</h3>
-      <form className="bar"><input type="month" name="m" defaultValue={m} min="2026-10" max={thisMonth()} /><button>Tampilkan</button></form>
+      <form className="bar"><PeriodPicker defaultValue={m} min="2026-10" max={thisMonth()} /><button>Tampilkan</button></form>
       <div className="wrap" style={{ marginBottom: 16 }}><table><thead><tr><th>Gudang</th><th>Status {m}</th><th>Aksi</th></tr></thead>
         <tbody>{locks.map((l) => <tr key={l.id}><td>{l.name}</td><td>{l.locked_by ? `Terkunci oleh ${l.locked_by} (${new Date(l.locked_at).toLocaleString('id-ID')})` : <span className="warn">Terbuka (belum dikunci)</span>}</td><td>{l.locked_by && <UnlockForm wh={l.id} whName={l.name} month={m} />}</td></tr>)}</tbody></table></div>
       <h3>Riwayat kunci bulan</h3>
