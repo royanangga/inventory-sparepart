@@ -21,7 +21,8 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 ## Rekonsiliasi bulanan (Accounting)
 - Menu **Rekonsiliasi**: bandingkan IN/OUT aplikasi (qty × harga × kurs) dengan nilai yang sudah tercatat di akun Persediaan GL **per plant (Sunter, KIIC, SC1, SC2)**; tidak dipisah per gudang/divisi (KIIC Maintenance + KIIC Stamping digabung jadi KIIC). Status kunci plant = Terkunci bila semua gudang di plant itu terkunci.
 - **IN**: isi nilai IN yang sudah tercatat di Persediaan GL per plant; Reclass IN = IN sistem − IN di GL (+ = Dr Persediaan / Cr Beban).
-- **OUT**: nilai di GL tidak diketahui, jadi tidak diinput. Seluruh OUT sistem langsung dibebankan ke **Beban** (Dr Beban / Cr Persediaan).
+- **OUT**: nilai di GL tidak diketahui, jadi tidak diinput. Seluruh OUT sistem dibebankan ke **Beban** (Dr Beban / Cr Persediaan).
+- **Jurnal**: satu jurnal penyesuaian per plant sebesar nominal bersih = Reclass IN − OUT sistem (+ = Dr Persediaan / Cr Beban; − = Dr Beban / Cr Persediaan).
 - Isi IN di GL per plant, simpan, lalu lihat draft jurnal; unduh Excel (jurnal + detail IN/OUT per barang) dan catat No. jurnal serta status diposting.
 
 ## Aturan penting

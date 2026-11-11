@@ -17,7 +17,7 @@ export async function GET(req) {
   add('Rekonsiliasi', [...list.map(line), { Plant: 'TOTAL', 'IN aplikasi': R(T.in_v), 'IN di GL Persediaan': R(T.glIn), 'Reclass IN': T.adjIn, 'OUT aplikasi (→ Beban)': T.adjOut,
     'Penyesuaian bersih (+ Dr Persediaan / Cr Beban)': T.net }]);
   add('Draft Jurnal', list.flatMap((w) => reconJournal(w).flatMap((j) => [
-    { Plant: j.plant, Keterangan: j.ket, Akun: j.dr, Debit: j.amt, Kredit: '' }, { Plant: j.plant, Keterangan: j.ket, Akun: j.cr, Debit: '', Kredit: j.amt }])));
+    { Plant: j.plant, Dasar: j.ket, Akun: j.dr, Debit: j.amt, Kredit: '' }, { Plant: j.plant, Dasar: j.ket, Akun: j.cr, Debit: '', Kredit: j.amt }])));
   const det = await q(`SELECT w.plant gudang, i.group_name kelompok, i.code kode, i.name item, i.spec spesifikasi,
       SUM(CASE WHEN mv.type='IN' THEN mv.qty ELSE 0 END) qty_in, SUM(CASE WHEN mv.type='OUT' THEN mv.qty ELSE 0 END) qty_out, p.price harga, cr.rate kurs
     FROM movements mv JOIN items i ON i.id=mv.item_id JOIN warehouses w ON w.id=i.warehouse_id
