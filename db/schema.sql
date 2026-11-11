@@ -45,3 +45,9 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cr_actio
 CREATE TABLE IF NOT EXISTS period_events (
   id serial PRIMARY KEY, warehouse_id int NOT NULL REFERENCES warehouses(id), month text NOT NULL,
   event text NOT NULL, by_user text, note text, at timestamptz DEFAULT now());
+-- Rekonsiliasi bulanan Accounting: nilai yang sudah tercatat di akun Persediaan (GL) per gudang per bulan
+CREATE TABLE IF NOT EXISTS recon (
+  month text NOT NULL, warehouse_id int NOT NULL REFERENCES warehouses(id),
+  gl_in numeric NOT NULL DEFAULT 0, gl_out numeric NOT NULL DEFAULT 0, je_ref text, note text,
+  posted boolean NOT NULL DEFAULT false, updated_by text, updated_at timestamptz DEFAULT now(),
+  PRIMARY KEY (month, warehouse_id));

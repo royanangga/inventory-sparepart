@@ -23,7 +23,7 @@ export default async function RootLayout({ children }) {
   const items = u ? [
     { href: '/dashboard', label: 'Dashboard' }, { href: '/', label: 'Stok' },
     ...(u.role === 'gudang' ? [{ href: '/mutasi', label: 'Input Mutasi' }] : []),
-    ...(u.role === 'accounting' ? [{ href: '/approval', label: 'Approval', badge: pending }, { href: '/price', label: 'Price Master' }] : []),
+    ...(u.role === 'accounting' ? [{ href: '/approval', label: 'Approval', badge: pending }, { href: '/rekon', label: 'Rekonsiliasi' }, { href: '/price', label: 'Price Master' }] : []),
   ] : [];
   return (
     <html lang="id"><body className={font.className}>

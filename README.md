@@ -18,6 +18,11 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 - Accounting dapat **membuka kunci** bulan per gudang di menu Approval (alasan wajib, tercatat di riwayat). Permintaan yang masih menunggu untuk bulan itu otomatis ditolak; gudang lalu bisa mengubah tabel langsung dan mengunci lagi.
 - Oktober 2026 (data import awal) otomatis terkunci. Tabel baru dibuat otomatis saat aplikasi pertama kali dibuka setelah update.
 
+## Rekonsiliasi bulanan (Accounting)
+- Menu **Rekonsiliasi**: bandingkan IN/OUT aplikasi (qty × harga × kurs) dengan nilai yang sudah tercatat di akun Persediaan GL per gudang.
+- IN seharusnya masuk **Persediaan** (Adj IN = IN aplikasi − IN di GL Persediaan; + = Dr Persediaan / Cr Beban). OUT seharusnya masuk **Beban** (Adj OUT = OUT aplikasi − OUT di GL Persediaan; + = Dr Beban / Cr Persediaan).
+- Isi nilai GL per gudang, simpan, lalu lihat draft jurnal; unduh Excel (jurnal + detail IN/OUT per barang) dan catat No. jurnal serta status diposting.
+
 ## Aturan penting
 - Satu baris Excel = satu baris barang (kode yang sama bisa muncul beberapa kali di gudang yang sama, mis. sisi R/L).
 - Stok awal = kolom STOCK SEP. IN/OUT Oktober masuk sebagai mutasi tertanggal 31 Okt 2026; mutasi berikutnya diinput gudang.
