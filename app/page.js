@@ -7,6 +7,9 @@ import { requireUser } from '../lib/auth';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Stok Gudang' };
 const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
+// Kolom informasi barang yang bisa disembunyikan: tampil hanya jika lebih dari separuh baris di gudang itu terisi.
+// Kode & Item selalu tampil. Kolom tersembunyi tetap bisa dilihat dan diedit lewat tombol Edit.
+const COLS = [['group_name', 'Kelompok'], ['part_no', 'Part No'], ['spec', 'Spesifikasi'], ['machine', 'Mesin'], ['division', 'Divisi'], ['supplier', 'Supplier barang']];
 const fmt = (v) => (v == null ? '—' : nf.format(v));
 
 export default async function Home({ searchParams: sp }) {
@@ -17,6 +20,9 @@ export default async function Home({ searchParams: sp }) {
   const m = /^\d{4}-\d{2}$/.test(sp.m || '') && sp.m >= '2026-10' ? sp.m : '2026-10';
   const [y, mo] = m.split('-').map(Number);
   const start = `${m}-01`, next = new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 10);
+
+  const [st] = await q(`SELECT count(*)::int n, ${COLS.map(([k]) => `count(NULLIF(btrim(i.${k}), ''))::int ${k}`).join(', ')} FROM items i WHERE i.warehouse_id=$1`, [w.id]);
+  const has = (k) => st[k] * 2 > st.n, hiddenCols = COLS.filter(([k]) => !has(k));
 
   const params = [w.id, start, next, m];
   let where = 'i.warehouse_id=$1';
@@ -69,12 +75,13 @@ export default async function Home({ searchParams: sp }) {
           <small>{noPrice} baris tanpa harga{noRate ? `, ${noRate} baris kurs belum diisi` : ''}</small></div>}
       </div>
       <div className="wrap"><table>
-        <thead><tr><th>Kelompok</th><th>Kode</th><th>Item</th><th>Spesifikasi</th><th className="n">Stok awal</th><th className="n">Masuk</th><th className="n">Keluar</th><th className="n">Saldo</th>
+        <thead><tr>{has('group_name') && <th>Kelompok</th>}{has('part_no') && <th>Part No</th>}<th>Kode</th><th>Item</th>{has('spec') && <th>Spesifikasi</th>}{has('machine') && <th>Mesin</th>}{has('division') && <th>Divisi</th>}{has('supplier') && <th>Supplier barang</th>}<th className="n">Stok awal</th><th className="n">Masuk</th><th className="n">Keluar</th><th className="n">Saldo</th>
           {acc && <><th className="n">Harga</th><th>Supplier / tgl harga</th><th className="n">Nilai (IDR)</th></>}<th>Aksi</th></tr></thead>
         <tbody>{view.map((r) => (
           <tr key={r.id}>
-            <td>{r.group_name}{r.part_no ? <div className="muted">{r.part_no}</div> : null}</td>
-            <td>{r.code || <span className="warn">—</span>}</td><td><ItemDetail item={info(r)} month={m} acc={acc} className="linkbtn">{r.name || '(tanpa nama)'}</ItemDetail></td><td>{r.spec}</td>
+            {has('group_name') && <td>{r.group_name}</td>}{has('part_no') && <td>{r.part_no}</td>}
+            <td>{r.code || <span className="warn">—</span>}</td><td><ItemDetail item={info(r)} month={m} acc={acc} className="linkbtn">{r.name || '(tanpa nama)'}</ItemDetail></td>
+            {has('spec') && <td>{r.spec}</td>}{has('machine') && <td>{r.machine}</td>}{has('division') && <td>{r.division}</td>}{has('supplier') && <td>{r.supplier}</td>}
             <td className="n">{fmt(r.open)}</td><td className="n">{fmt(r.inn)}</td><td className="n">{fmt(r.outt)}</td><td className="n"><b>{fmt(r.bal)}</b></td>
             {acc && <>
               <td className="n">{r.price == null ? <span className="warn">belum ada</span> : <>{r.code ? <PriceOptions code={r.code} month={m} price={r.price} className="linkbtn">{fmt(r.price)}</PriceOptions> : fmt(r.price)}{r.cur !== '03' && <div className="muted">kurs {r.cur}</div>}</>}</td>
@@ -83,6 +90,7 @@ export default async function Home({ searchParams: sp }) {
             <td><ItemDetail item={info(r)} month={m} acc={acc} tab="edit" className="ghost">Edit</ItemDetail></td>
           </tr>))}
         </tbody></table></div>
+      {hiddenCols.length > 0 && st.n > 0 && <p className="muted" style={{ margin: '8px 0 0' }}>Kolom tidak ditampilkan (kosong / terisi kurang dari separuh baris di gudang ini): {hiddenCols.map(([k, t]) => `${t}${st[k] ? ` (terisi ${st[k]} dari ${st.n} baris)` : ' (kosong)'}`).join(', ')}. Datanya tetap bisa dilihat dan diisi lewat tombol Edit.</p>}
       <nav className="pager" aria-label="Halaman tabel">
         <span className="muted">Menampilkan {data.length ? (pg - 1) * ps + 1 : 0}–{Math.min(pg * ps, data.length)} dari {data.length} baris</span>
         <span className="pg">

@@ -76,7 +76,7 @@ export default function ItemDetail({ item, month, acc, tab: t0 = 'stok', classNa
         <div className="ov" onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="dlg" role="dialog" aria-modal="true" aria-label="Detail barang" style={{ width: 'min(820px,100%)', overflow: 'auto' }}>
             <h2>{item.code || '—'} · {item.name}</h2>
-            <p className="muted">{[item.group_name, item.spec].filter(Boolean).join(' · ')}</p>
+            <p className="muted">{[item.group_name, item.spec, item.part_no && `Part No ${item.part_no}`, item.machine && `Mesin ${item.machine}`, item.division && `Divisi ${item.division}`, item.supplier && `Supplier ${item.supplier}`].filter(Boolean).join(' · ')}</p>
             <div className="bar" style={{ marginBottom: 0 }}>
               <button type="button" className={tab === 'stok' ? '' : 'ghost'} onClick={() => setTab('stok')}>Stok bulanan</button>
               <button type="button" className={tab === 'edit' ? '' : 'ghost'} onClick={() => setTab('edit')}>Edit informasi</button>
