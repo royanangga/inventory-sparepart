@@ -15,6 +15,7 @@ export default async function Mutasi({ searchParams: sp }) {
   const [start, end] = monthRange(m);
   const [y, mo] = m.split('-').map(Number);
   const prev = new Date(Date.UTC(y, mo - 2, 1)).toISOString().slice(0, 7);
+  const [wh] = await q('SELECT code, name FROM warehouses WHERE id=$1', [u.wh]);
   const [lock] = await q('SELECT * FROM period_locks WHERE warehouse_id=$1 AND month=$2', [u.wh, m]);
   const rows = (await q(`
     SELECT i.id, i.group_name "group", i.code, i.name, i.spec, i.stock_sep + COALESCE(p.pre,0) AS open,
@@ -35,7 +36,7 @@ export default async function Mutasi({ searchParams: sp }) {
       {lock
         ? <div className="card"><b>Bulan {m} terkunci</b> <span className="muted">oleh {lock.locked_by} pada {new Date(lock.locked_at).toLocaleString('id-ID')}. Ubah angka Masuk/Keluar yang perlu dikoreksi, isi alasan, lalu ajukan ke Accounting.</span></div>
         : <div className="card"><span className="muted">Bulan {m} terbuka. Stok akhir {prev} terisi otomatis; ketik jumlah <b>Masuk</b> dan/atau <b>Keluar</b> bulan ini (kosong = 0), saldo terhitung otomatis. Klik <b>Simpan</b>, dan setelah semuanya benar klik kunci bulan di bawah tabel.</span></div>}
-      <Grid key={key} rows={rows} month={m} prev={prev} locked={!!lock} />
+      <Grid key={key} rows={rows} month={m} prev={prev} locked={!!lock} wh={wh} />
       {!lock && <div className="card bar" style={{ justifyContent: 'space-between', marginTop: 12 }}><span className="muted">Pastikan perubahan sudah disimpan sebelum mengunci.</span><LockForm month={m} /></div>}
       <h3>Permintaan perubahan saya</h3>
       <div className="wrap"><table>

@@ -36,3 +36,10 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 - **Accounting**: klik angka **Harga** untuk melihat semua opsi harga di price master periode itu (per supplier / Start_Date, maks. 10 terbaru per Item_Code) dan memilih harga lain, alasan wajib. Pilihan berlaku untuk **semua barang berkode sama di semua gudang** pada periode tersebut dan dipakai di nilai persediaan, laporan, dan rekonsiliasi. Pilih **Otomatis** untuk kembali ke Start_Date terbaru.
 - Harga manual **tidak hilang** saat price master periode diupload ulang. Opsi harga hanya tersimpan untuk upload yang dilakukan setelah fitur ini aktif, jadi **upload ulang price master periode yang sudah ada** agar opsinya muncul.
 - Rekonsiliasi plant yang sudah diposting akan menampilkan peringatan saat harga diubah.
+
+## Import mutasi dari Excel (Input Mutasi, user Gudang)
+- Di halaman **Input Mutasi**: klik **Unduh template Excel** (berisi semua barang gudang beserta Masuk/Keluar saat ini), isi kolom **Masuk** dan **Keluar**, lalu upload lewat **Import dari Excel**.
+- Import **hanya mengisi tabel** (baris yang berubah berwarna kuning), belum menyimpan. Setelah diperiksa, klik **Simpan**, atau **Ajukan perubahan** bila bulan sudah terkunci. Validasi saldo negatif, kunci bulan, dan approval Accounting tetap berlaku.
+- Barang dikenali lewat kolom **ID** (template) atau **Kode**. Kode yang dipakai lebih dari satu baris barang wajib memakai ID. File sendiri (tanpa template) cukup punya kolom Kode dan Masuk dan/atau Keluar. Kolom Masuk/Keluar yang tidak ada di file tidak mengubah angka yang ada; sel kosong = 0.
+- Barang yang tidak ada di file tidak diubah. Barang yang muncul beberapa kali dijumlahkan. Baris bermasalah (kode tidak ada, ID salah, angka tidak valid, menunggu approval) dilaporkan dan dilewati.
+- Template mencantumkan periode & gudang (sheet Info); file untuk periode atau gudang lain ditolak.

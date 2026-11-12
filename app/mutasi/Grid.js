@@ -4,6 +4,7 @@ import { useFormState } from 'react-dom';
 import { saveGrid, requestGrid } from '../../lib/actions';
 import ConfirmForm from '../ConfirmForm';
 import Pager from '../Pager';
+import ImportMutasi from './ImportMutasi';
 const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const parse = (s) => { const t = String(s ?? '').trim().replace(',', '.'); return t === '' ? 0 : Number(t); };
 
@@ -22,12 +23,13 @@ const Row = memo(function Row({ r, v, onChange, locked, show }) {
   );
 });
 
-export default function Grid({ rows, month, prev, locked }) {
+export default function Grid({ rows, month, prev, locked, wh }) {
   const init = useMemo(() => Object.fromEntries(rows.map((r) => [r.id, { in: r.inn ? String(r.inn) : '', out: r.outt ? String(r.outt) : '' }])), [rows]);
   const [vals, setVals] = useState(init);
   const [filter, setFilter] = useState('');
   const [pg, setPg] = useState(1), [ps, setPs] = useState(50);
   const [state, action] = useFormState(locked ? requestGrid : saveGrid, {});
+  const onApply = useCallback((u) => setVals((p) => ({ ...p, ...u })), []);
   const onChange = useCallback((id, k, val) => setVals((p) => ({ ...p, [id]: { ...p[id], [k]: val } })), []);
   const { changed, invalid } = useMemo(() => {
     const changed = []; let invalid = 0;
@@ -52,6 +54,8 @@ export default function Grid({ rows, month, prev, locked }) {
       : { title: `Simpan ${list.length} perubahan mutasi ${month}?`, intro: 'Jumlah Masuk/Keluar lama akan diganti dengan nilai baru berikut.', rows: list, confirmText: 'Simpan' };
   };
   return (
+    <>
+    <ImportMutasi rows={rows} vals={vals} month={month} prev={prev} wh={wh} locked={locked} dirty={changed.length > 0 || invalid > 0} onApply={onApply} onReset={() => setVals(init)} />
     <ConfirmForm action={action} build={build}>
       <input type="hidden" name="month" value={month} />
       <input type="hidden" name="payload" value={JSON.stringify(changed)} />
@@ -70,5 +74,6 @@ export default function Grid({ rows, month, prev, locked }) {
       </table></div>
       <Pager page={cur} size={ps} total={list.length} onPage={setPg} onSize={(n) => { setPs(n); setPg(1); }} />
     </ConfirmForm>
+    </>
   );
 }
