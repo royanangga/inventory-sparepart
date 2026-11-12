@@ -16,6 +16,16 @@ export async function POST(req) {
     await pool.query("INSERT INTO currency_rates(code) SELECT DISTINCT COALESCE(currency_code,'03') FROM price_master ON CONFLICT DO NOTHING");
     return NextResponse.json({ ok: 1 });
   }
+  if (Array.isArray(b.cands)) { // kandidat harga (opsi untuk dipilih manual di halaman Stok)
+    const c = b.cands;
+    if (!c.length || c.length > 5000) return NextResponse.json({ error: 'bad chunk' }, { status: 400 });
+    if (b.cfirst) await pool.query('DELETE FROM price_candidates WHERE month=$1', [m]);
+    await pool.query(
+      `INSERT INTO price_candidates(month,item_code,price,currency_code,unit_cls,trade_code,trade_name,start_date,last_update)
+       SELECT $9, * FROM unnest($1::text[],$2::numeric[],$3::text[],$4::text[],$5::text[],$6::text[],$7::date[],$8::date[])`,
+      [c.map((x) => x.c), c.map((x) => x.p), c.map((x) => x.cur), c.map((x) => x.u), c.map((x) => x.t), c.map((x) => x.tn), c.map((x) => x.d), c.map((x) => x.l), m]);
+    return NextResponse.json({ ok: c.length });
+  }
   const r = b.rows || [];
   if (!r.length || r.length > 5000) return NextResponse.json({ error: 'bad chunk' }, { status: 400 });
   // Potongan pertama: kosongkan harga periode ini lebih dulu (upload ulang = menggantikan seluruh price master periode tsb)

@@ -12,6 +12,9 @@ function iso(v) {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 const txt = (v) => (v == null ? null : String(v).trim() || null);
+// Nilai pembanding Last_Update yang urut secara kronologis (Date -> ISO), supaya 'terbaru' benar-benar terbaru
+const stamp = (v) => (v instanceof Date ? v.toISOString() : v ? String(v) : '');
+const MAXC = 10; // kandidat harga yang disimpan per Item_Code (terbaru dulu)
 
 const lastDay = (m) => { const [y, mo] = m.split('-').map(Number); return `${m}-${pad(new Date(y, mo, 0).getDate())}`; };
 
@@ -39,20 +42,23 @@ export default function PriceImport({ counts = {}, defaultMonth, maxMonth }) {
       const [cc, cp, cd, cl, cu, ct, cn, cr] = ['item_code', 'price', 'start_date', 'last_update', 'unit_cls', 'trade_code', 'trade_name', 'currency_code'].map(ix);
       if (cc < 0 || cp < 0 || cd < 0) throw new Error('Kolom Item_Code / Price / Start_Date wajib ada');
       const td = lastDay(month); // harga yang berlaku s/d akhir periode
-      const best = new Map(); let read = 0, ignored = 0;
+      const best = new Map(), all = new Map(); let read = 0, ignored = 0;
       for (let i = hi + 1; i < rows.length; i++) {
         const r = rows[i]; const code = txt(r[cc]); if (!code) continue; read++;
         const price = Number(r[cp]), d = iso(r[cd]);
         if (!(price > 0) || !d || d > td) { ignored++; continue; } // harga 0 / tanggal kosong / Start_Date setelah akhir periode (mis. 9999) diabaikan
-        const lu = r[cl] ? String(r[cl]) : '';
-        const cand = { c: code, p: price, cur: txt(r[cr]), u: txt(r[cu]), t: txt(r[ct]), tn: txt(r[cn]), d, f: false, lu };
+        const lu = stamp(r[cl]);
+        const cand = { c: code, p: price, cur: txt(r[cr]), u: txt(r[cu]), t: txt(r[ct]), tn: txt(r[cn]), d, f: false, lu, l: iso(r[cl]) };
+        let g = all.get(code); if (!g) all.set(code, (g = new Map()));
+        const gk = [cand.t, cand.tn, cand.cur, d, price].join('|'), ge = g.get(gk); if (!ge || lu > ge.lu) g.set(gk, cand);
         const b = best.get(code);
         if (!b || d > b.d) best.set(code, cand);
         else if (d === b.d) { const f = b.f || b.p !== price; if (lu > b.lu) best.set(code, { ...cand, f }); else b.f = f; }
       }
       rows = null;
       const list = [...best.values()];
-      setRes({ month, list, read, ignored, conflicts: list.filter((x) => x.f).length });
+      const cands = [...all.values()].flatMap((g) => [...g.values()].sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : a.lu < b.lu ? 1 : a.lu > b.lu ? -1 : 0)).slice(0, MAXC));
+      setRes({ month, list, cands, read, ignored, conflicts: list.filter((x) => x.f).length });
       setInfo('');
     } catch (err) { setInfo('Gagal: ' + err.message); }
     setBusy(false);
@@ -66,6 +72,12 @@ export default function PriceImport({ counts = {}, defaultMonth, maxMonth }) {
         setInfo(`Menyimpan ${Math.min(i + size, list.length)} / ${list.length}…`);
         const r = await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ month: res.month, first: i === 0, rows: list.slice(i, i + size) }) });
         if (!r.ok) throw new Error('Server menolak data (' + r.status + ')');
+      }
+      const { cands } = res;
+      for (let i = 0; i < cands.length; i += size) {
+        setInfo(`Menyimpan opsi harga ${Math.min(i + size, cands.length)} / ${cands.length}…`);
+        const r = await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ month: res.month, cfirst: i === 0, cands: cands.slice(i, i + size) }) });
+        if (!r.ok) throw new Error('Server menolak data opsi harga (' + r.status + ')');
       }
       await fetch('/api/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ done: 1, month: res.month, filename: file, rowsRead: res.read, items: list.length, conflicts: res.conflicts }) });
       setInfo(`Selesai: ${list.length} item tersimpan untuk periode ${res.month}.`); setRes(null); router.refresh();
@@ -84,8 +96,8 @@ export default function PriceImport({ counts = {}, defaultMonth, maxMonth }) {
           <p>{res.read.toLocaleString('id-ID')} baris dibaca → <b>{res.list.length.toLocaleString('id-ID')} item</b> unik. {res.ignored} baris diabaikan (harga ≤ 0 / tanggal kosong / Start_Date setelah akhir periode {res.month}).
             {res.conflicts > 0 && <> <b className="warn">{res.conflicts} item</b> punya beberapa supplier dengan Start_Date sama tetapi harga berbeda (dipilih yang Last_Update terbaru, ditandai di halaman stok).</>}</p>
           <button onClick={() => setDlg(true)} disabled={busy}>Simpan ke database</button>
-          <ConfirmDialog open={dlg} title={`Simpan price master periode ${res.month}?`} intro={`Berkas ${file}. Seluruh harga periode ${res.month} akan diganti dengan isi berkas ini (periode lain tidak berubah).`} confirmText="Simpan ke database"
-            rows={[{ label: `Item berharga periode ${res.month}`, from: (counts[res.month] || 0).toLocaleString('id-ID'), to: res.list.length.toLocaleString('id-ID') }, { label: 'Item dengan harga beda antar supplier', from: '—', to: String(res.conflicts) }]}
+          <ConfirmDialog open={dlg} title={`Simpan price master periode ${res.month}?`} intro={`Berkas ${file}. Seluruh harga otomatis periode ${res.month} akan diganti dengan isi berkas ini (periode lain tidak berubah). Harga manual yang sudah dipilih Accounting tetap dipertahankan.`} confirmText="Simpan ke database"
+            rows={[{ label: `Item berharga periode ${res.month}`, from: (counts[res.month] || 0).toLocaleString('id-ID'), to: res.list.length.toLocaleString('id-ID') }, { label: 'Item dengan harga beda antar supplier', from: '—', to: String(res.conflicts) }, { label: 'Opsi harga tersimpan (untuk pilih manual)', from: '—', to: res.cands.length.toLocaleString('id-ID') }]}
             onConfirm={() => { setDlg(false); save(); }} onCancel={() => setDlg(false)} />
         </div>
       )}

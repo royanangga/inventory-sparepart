@@ -30,3 +30,9 @@ Next.js 14 + Postgres. Stok per gudang (Sunter, KIIC Maintenance, KIIC Stamping,
 - Stok awal = kolom STOCK SEP. IN/OUT Oktober masuk sebagai mutasi tertanggal 31 Okt 2026; mutasi berikutnya diinput gudang.
 - Harga: **price master per periode (bulan)**. Saat upload, pilih periode; harga itu dipakai untuk jurnal adjustment/rekonsiliasi dan laporan/stok periode tersebut (tidak ada fallback ke periode lain). Upload ulang periode yang sama = mengganti seluruh harga periode itu. Data price master lama otomatis menjadi periode 2026-10. Kurs ke IDR masih satu untuk semua periode.
 - Pemilihan harga per `Item_Code`: baris dengan **Start_Date terbaru** (≤ akhir periode; harga ≤ 0 diabaikan). Bila beberapa supplier punya Start_Date sama dengan harga beda, dipilih `Last_Update` terbaru dan ditandai.
+
+## Detail barang & harga manual (halaman Stok)
+- Klik **nama barang** untuk melihat stok per bulan (maks. 12 bulan sampai periode terpilih); klik **Edit** untuk mengubah informasi barang (kode hanya Accounting). Perubahan info tercatat di riwayat.
+- **Accounting**: klik angka **Harga** untuk melihat semua opsi harga di price master periode itu (per supplier / Start_Date, maks. 10 terbaru per Item_Code) dan memilih harga lain, alasan wajib. Pilihan berlaku untuk **semua barang berkode sama di semua gudang** pada periode tersebut dan dipakai di nilai persediaan, laporan, dan rekonsiliasi. Pilih **Otomatis** untuk kembali ke Start_Date terbaru.
+- Harga manual **tidak hilang** saat price master periode diupload ulang. Opsi harga hanya tersimpan untuk upload yang dilakukan setelah fitur ini aktif, jadi **upload ulang price master periode yang sudah ada** agar opsinya muncul.
+- Rekonsiliasi plant yang sudah diposting akan menampilkan peringatan saat harga diubah.

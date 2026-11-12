@@ -145,3 +145,7 @@ aside{grid-area:nav;align-self:start}.topbar{grid-area:top}main{grid-area:main}
   aside nav a::after{display:none}aside nav a{width:44px;height:44px}
   .topbar{background:var(--bg)}
 }
+
+/* tombol berbentuk tautan (nama barang -> detail) & tombol kecil di tabel */
+button.linkbtn{background:none;color:var(--tl);padding:0;border-radius:0;font-weight:600;text-align:left;overflow:visible}button.linkbtn::after{display:none}button.linkbtn:hover:not(:disabled){background:none;box-shadow:none;transform:none;text-decoration:underline}
+td button.ghost{padding:4px 12px;color:var(--tl2)}

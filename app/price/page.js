@@ -13,10 +13,10 @@ export default async function Price({ searchParams: sp = {} }) {
   const counts = Object.fromEntries(periods.map((p) => [p.month, p.n]));
   const cnt = periods.find((p) => p.month === m) || { n: 0, latest: null };
   const imports = await q('SELECT * FROM price_imports WHERE month=$1 ORDER BY id DESC LIMIT 5', [m]);
-  const rates = await q('SELECT cr.code, cr.rate, (SELECT count(*)::int FROM price_master p WHERE p.month=$1 AND COALESCE(p.currency_code,\'03\')=cr.code) n FROM currency_rates cr ORDER BY cr.code', [m]);
+  const rates = await q('SELECT cr.code, cr.rate, (SELECT count(*)::int FROM price_effective p WHERE p.month=$1 AND COALESCE(p.currency_code,\'03\')=cr.code) n FROM currency_rates cr ORDER BY cr.code', [m]);
   const missing = await q(`SELECT w.name wh, i.code, i.name FROM items i JOIN warehouses w ON w.id=i.warehouse_id
-    LEFT JOIN price_master p ON p.item_code=i.code AND p.month=$1 WHERE p.item_code IS NULL ORDER BY (i.code IS NULL), w.id, i.code LIMIT 100`, [m]);
-  const [{ total }] = await q('SELECT count(*)::int total FROM items i LEFT JOIN price_master p ON p.item_code=i.code AND p.month=$1 WHERE p.item_code IS NULL', [m]);
+    LEFT JOIN price_effective p ON p.item_code=i.code AND p.month=$1 WHERE p.item_code IS NULL ORDER BY (i.code IS NULL), w.id, i.code LIMIT 100`, [m]);
+  const [{ total }] = await q('SELECT count(*)::int total FROM items i LEFT JOIN price_effective p ON p.item_code=i.code AND p.month=$1 WHERE p.item_code IS NULL', [m]);
   return (
     <>
       <h1>Price Master — {m}</h1>

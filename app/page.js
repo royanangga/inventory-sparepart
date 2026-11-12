@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import PeriodPicker from './PeriodPicker';
+import ItemDetail from './ItemDetail';
+import PriceOptions from './PriceOptions';
 import { q } from '../lib/db';
 import { requireUser } from '../lib/auth';
 export const dynamic = 'force-dynamic';
@@ -21,16 +23,16 @@ export default async function Home({ searchParams: sp }) {
   if (sp.q) { params.push(`%${sp.q}%`); const n = params.length; where += ` AND (i.code ILIKE $${n} OR i.name ILIKE $${n} OR i.spec ILIKE $${n} OR i.machine ILIKE $${n} OR i.group_name ILIKE $${n})`; }
   if (acc && sp.nop === '1') where += ' AND p.item_code IS NULL';
   const rows = await q(`
-    SELECT i.id, i.group_name, i.part_no, i.code, i.name, i.spec, i.machine, i.stock_sep,
+    SELECT i.id, i.group_name, i.part_no, i.code, i.name, i.spec, i.machine, i.division, i.supplier, i.stock_sep,
       COALESCE(m.pre,0) pre, COALESCE(m.inn,0) inn, COALESCE(m.outt,0) outt,
-      p.price, p.trade_name, p.start_date, p.conflict, COALESCE(p.currency_code,'03') cur, cr.rate
+      p.price, p.trade_name, p.start_date, p.conflict, p.manual, COALESCE(p.currency_code,'03') cur, cr.rate
     FROM items i
     LEFT JOIN (SELECT item_id,
         SUM(CASE WHEN date<$2 THEN (CASE type WHEN 'IN' THEN qty ELSE -qty END) ELSE 0 END) pre,
         SUM(CASE WHEN date>=$2 AND type='IN' THEN qty ELSE 0 END) inn,
         SUM(CASE WHEN date>=$2 AND type='OUT' THEN qty ELSE 0 END) outt
       FROM movements WHERE date<$3 GROUP BY item_id) m ON m.item_id=i.id
-    LEFT JOIN price_master p ON p.item_code=i.code AND p.month=$4
+    LEFT JOIN price_effective p ON p.item_code=i.code AND p.month=$4
     LEFT JOIN currency_rates cr ON cr.code=COALESCE(p.currency_code,'03')
     WHERE ${where} ORDER BY i.group_name, i.id`, params);
 
@@ -45,6 +47,8 @@ export default async function Home({ searchParams: sp }) {
   const pg = Math.min(Math.max(parseInt(sp.p, 10) || 1, 1), pages), view = data.slice((pg - 1) * ps, pg * ps);
   const qs = (o) => '?' + new URLSearchParams({ w: w.code, m, ps, ...(sp.q ? { q: sp.q } : {}), ...(acc && sp.nop === '1' ? { nop: '1' } : {}), ...o }).toString();
   const nums = [...new Set([1, pages, pg - 1, pg, pg + 1])].filter((x) => x >= 1 && x <= pages).sort((a, b) => a - b).flatMap((x, i, a) => (i && x - a[i - 1] > 1 ? ['…', x] : [x]));
+
+  const info = (r) => ({ id: r.id, group_name: r.group_name, part_no: r.part_no, code: r.code, name: r.name, spec: r.spec, machine: r.machine, division: r.division, supplier: r.supplier });
 
   return (
     <>
@@ -66,16 +70,17 @@ export default async function Home({ searchParams: sp }) {
       </div>
       <div className="wrap"><table>
         <thead><tr><th>Kelompok</th><th>Kode</th><th>Item</th><th>Spesifikasi</th><th className="n">Stok awal</th><th className="n">Masuk</th><th className="n">Keluar</th><th className="n">Saldo</th>
-          {acc && <><th className="n">Harga</th><th>Supplier / tgl harga</th><th className="n">Nilai (IDR)</th></>}</tr></thead>
+          {acc && <><th className="n">Harga</th><th>Supplier / tgl harga</th><th className="n">Nilai (IDR)</th></>}<th>Aksi</th></tr></thead>
         <tbody>{view.map((r) => (
           <tr key={r.id}>
             <td>{r.group_name}{r.part_no ? <div className="muted">{r.part_no}</div> : null}</td>
-            <td>{r.code || <span className="warn">—</span>}</td><td>{r.name}</td><td>{r.spec}</td>
+            <td>{r.code || <span className="warn">—</span>}</td><td><ItemDetail item={info(r)} month={m} acc={acc} className="linkbtn">{r.name || '(tanpa nama)'}</ItemDetail></td><td>{r.spec}</td>
             <td className="n">{fmt(r.open)}</td><td className="n">{fmt(r.inn)}</td><td className="n">{fmt(r.outt)}</td><td className="n"><b>{fmt(r.bal)}</b></td>
             {acc && <>
-              <td className="n">{r.price == null ? <span className="warn">belum ada</span> : <>{fmt(r.price)}{r.cur !== '03' && <div className="muted">kurs {r.cur}</div>}</>}</td>
-              <td>{r.price != null && <>{r.trade_name}<div className="muted">{r.start_date}{r.conflict && <> <span className="badge">harga beda antar supplier</span></>}</div></>}</td>
+              <td className="n">{r.price == null ? <span className="warn">belum ada</span> : <>{r.code ? <PriceOptions code={r.code} month={m} price={r.price} className="linkbtn">{fmt(r.price)}</PriceOptions> : fmt(r.price)}{r.cur !== '03' && <div className="muted">kurs {r.cur}</div>}</>}</td>
+              <td>{r.price != null && <>{r.trade_name}<div className="muted">{r.start_date}{r.conflict && <> <span className="badge">harga beda antar supplier</span></>}{r.manual && <> <span className="tag">harga manual</span></>}</div></>}</td>
               <td className="n">{r.val == null && r.price != null ? <span className="warn">kurs?</span> : fmt(r.val)}</td></>}
+            <td><ItemDetail item={info(r)} month={m} acc={acc} tab="edit" className="ghost">Edit</ItemDetail></td>
           </tr>))}
         </tbody></table></div>
       <nav className="pager" aria-label="Halaman tabel">

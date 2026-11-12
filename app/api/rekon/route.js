@@ -21,7 +21,7 @@ export async function GET(req) {
   const det = await q(`SELECT w.plant gudang, i.group_name kelompok, i.code kode, i.name item, i.spec spesifikasi,
       SUM(CASE WHEN mv.type='IN' THEN mv.qty ELSE 0 END) qty_in, SUM(CASE WHEN mv.type='OUT' THEN mv.qty ELSE 0 END) qty_out, p.price harga, cr.rate kurs
     FROM movements mv JOIN items i ON i.id=mv.item_id JOIN warehouses w ON w.id=i.warehouse_id
-    LEFT JOIN price_master p ON p.item_code=i.code AND p.month=$3 LEFT JOIN currency_rates cr ON cr.code=COALESCE(p.currency_code,'03')
+    LEFT JOIN price_effective p ON p.item_code=i.code AND p.month=$3 LEFT JOIN currency_rates cr ON cr.code=COALESCE(p.currency_code,'03')
     WHERE mv.date>=$1 AND mv.date<=$2 GROUP BY w.id, w.plant, w.name, i.id, p.price, cr.rate ORDER BY w.id, i.group_name, i.id`, [start, end, m]);
   const val = (r, k) => (r.harga != null && r.kurs != null ? R(r[k] * r.harga * r.kurs) : '');
   const d = (r, k) => ({ Plant: r.gudang, Kelompok: r.kelompok, Kode: r.kode, Item: r.item, Spesifikasi: r.spesifikasi, Qty: r[k], Harga: r.harga ?? '', 'Nilai (IDR)': val(r, k) });
