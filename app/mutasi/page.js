@@ -18,7 +18,7 @@ export default async function Mutasi({ searchParams: sp }) {
   const [wh] = await q('SELECT code, name FROM warehouses WHERE id=$1', [u.wh]);
   const [lock] = await q('SELECT * FROM period_locks WHERE warehouse_id=$1 AND month=$2', [u.wh, m]);
   const rows = (await q(`
-    SELECT i.id, i.group_name "group", i.code, i.name, i.spec, i.stock_sep + COALESCE(p.pre,0) AS open,
+    SELECT i.id, i.group_name "group", i.part_no, i.code, i.name, i.spec, i.machine, i.division, i.supplier, i.stock_sep + COALESCE(p.pre,0) AS open,
       COALESCE(c.inn,0) AS inn, COALESCE(c.outt,0) AS outt, (pr.item_id IS NOT NULL) AS pend
     FROM items i
     LEFT JOIN (SELECT item_id, SUM(CASE type WHEN 'IN' THEN qty ELSE -qty END) pre FROM movements WHERE date<$2 GROUP BY item_id) p ON p.item_id=i.id

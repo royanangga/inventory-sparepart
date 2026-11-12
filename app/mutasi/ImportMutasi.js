@@ -31,7 +31,7 @@ export default function ImportMutasi({ rows, vals, month, prev, wh, locked, dirt
         <input type="file" accept=".xlsx,.xls,.csv" onChange={onFile} disabled={busy} aria-label="Pilih file Excel mutasi" />
         {dirty && <button type="button" className="ghost" onClick={() => { onReset(); setRes(null); }}>Batalkan semua isian</button>}
       </div>
-      <p className="muted" style={{ margin: '8px 0 0' }}>Template berisi semua barang gudang ini beserta angka Masuk/Keluar saat ini; isi atau ubah angkanya lalu upload lagi. File sendiri juga bisa, asalkan ada kolom <b>Kode</b> dan <b>Masuk</b> / <b>Keluar</b>. Hasil import hanya mengisi tabel di bawah, belum tersimpan sampai Anda klik {locked ? 'Ajukan perubahan' : 'Simpan'}.</p>
+      <p className="muted" style={{ margin: '8px 0 0' }}>Template berisi semua barang gudang ini beserta info part (Kelompok, Part No, Kode, Item, Spesifikasi, Mesin, Divisi, Supplier) dan angka Masuk/Keluar saat ini; isi atau ubah angkanya lalu upload lagi. File sendiri juga bisa, asalkan ada kolom <b>Kode</b> dan <b>Masuk</b> / <b>Keluar</b>. Hasil import hanya mengisi tabel di bawah, belum tersimpan sampai Anda klik {locked ? 'Ajukan perubahan' : 'Simpan'}.</p>
       {busy && <p>Membaca file…</p>}
       {R?.error && <div className="err">{R.error}</div>}
       {R && !R.error && <>
